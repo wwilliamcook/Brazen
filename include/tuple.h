@@ -425,7 +425,20 @@ Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
 		exit(EXIT_FAILURE);
 	}
 }
-/***************IN PLACE**************/
+// VECTOR PROJECTION
+// Scalar projection of v1 onto v2.
+template <std::size_t _Size>
+double projection_scalar(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
+	return dot(v1, v2) / magnitude(v2);
+}
+// Vector projection of v1 onto v2.
+template <std::size_t _Size>
+Tuple<_Size> projection_vector(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
+	return v2 * (dot(v1, v2) / magnitudeSquared(v2));
+}
+
+
+/***************IN PLACE OPERATIONS***************/
 // SCALAR VECTOR MULTIPLICATION
 template <std::size_t _Size>
 Tuple<_Size>& operator*=(Tuple<_Size>& v, double s) {

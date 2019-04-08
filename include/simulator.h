@@ -19,6 +19,11 @@
 namespace PhysicsSimulator {
 	typedef std::chrono::time_point<std::chrono::steady_clock> time_point;
 
+	template <std::size_t _Size>
+	class simulator {
+	private:
+		
+	};
 	template <class dtype>
 	class Simulator3D {
 	private:

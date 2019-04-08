@@ -13,257 +13,320 @@
 #include <algorithm>
 
 namespace PhysicsSimulator {
-	enum class SpringForceType {
+	enum class SpringForceType {  // Specifies restoring force types in a spring-like particle connection
 		SPRING,  // Behaves like an ideal spring
 		CONSTANT,  // Always applies the same amount of force to retain shape
-		FIXED,  // Unable to be compressed or pulled when forceCoefficient is 1
+		STRONG,  // Unable to be compressed or pulled when force_coefficient is 1
+		NO_FORCE,  // Does not exert any force
 		MUSCLE  // Force can be controlled dynamically
 	};
-	enum class SpringType {
-		BUNGEE,  //: no force | too long: spring force
-		BOUNCY_ROPE,  //too short: no force | too long: constant force
-		ROPE,  //too short: no force | too long: brute force
-		SPRING,  //too short: spring force | too long: spring force
-		SPRING2,  //too short: spring force | too long: constant force
-		GELATIN,  //too short: spring force | too long: brute force
-		STRETCHY_BOUNCY,  //too short: constant force | too long: spring force
-		BOUNCY,  //too short: constant force | too long: constant force
-		BOUNCY2,  //too short: constant force | too long: brute force
-		SLINKY,  //too short: brute force | too long: spring force
-		SLINKY2,  //too short: brute force | too long: constant force
-		STRONG  //too short: brute force | too long: brute force
+	enum class SpringType {  // Specifies connection types between particles
+		BUNGEE,  // Compressed: no force | Stretched: spring force
+		BOUNCY_ROPE,  // Compressed: no force | Stretched: constant force
+		ROPE,  // Compressed: no force | Stretched: unstretchable
+		SPRING,  // Compressed: spring force | Stretched: spring force
+		SPRING2,  // Compressed: spring force | Stretched: constant force
+		GELATIN,  // Compressed: spring force | Stretched: unstretchable
+		STRETCHY_BOUNCY,  // Compressed: constant force | Stretched: spring force
+		BOUNCY,  // Compressed: constant force | Stretched: unstretchable
+		BOUNCY2,  // Compressed: constant force | Stretched: constant force
+		SLINKY,  // Compressed: incompressible | Stretched: spring force
+		SLINKY2,  // Compressed: incompressible | Stretched: constant force
+		STRONG,  // Compressed: incompressible | Stretched: unstretchable
+		MUSCLE  // Exert a specific force regardless of deformation direction
 	};
 
-	template <class dtype>
-	class Spring3D {
-		//represents a spring whose ends are attached to two distinct particles
+	/*
+	Class Spring - represents a spring-like connection between two distinct particles.
+	*/
+	template <std::size_t _Size>
+	class Spring {
 	private:
-		Particle3D<dtype> *p1, *p2;
+		Particle<_Size> *p1, *p2;
 
-		dtype naturalLength;//length which the spring tries to retain
-		dtype compressionForceCoefficient,//amount of force to apply when the spring is compressed
-			tensionForceCoefficient;//amount of force to apply when the spring is stretched
-		SpringForceType compressionForceType,//type of force to apply when the spring is compressed
-			tensionForceType;//type of force to apply when the spring is stretched
-		dtype deformationCoefficient;//allowance of permanent deformation over time; value of 0 allows no deformation, and value of 1 provides no resistance to deformation
+		double natural_length;  // Distance at which the connected particles can be at equilibrium
+		double compression_force_strength,  // Strength of force to apply when the connection is compressed
+			tension_force_strength;  // Strength of force to apply when the connection is stretched
+
+		SpringForceType compression_force_type,  // Type of force to apply when the connection is compressed
+			tension_force_type;  // Type of force to apply when the connection is stretched
+		double deformation_coefficient;  // Mutability of "natural_length" due to prolonged deformation. Value of 0 allows no deformation; value of 1 provides no resistance to deformation.
 	public:
-		Spring3D(Particle3D<dtype>* p1, Particle3D<dtype>* p2, dtype naturalLength, dtype forceCoefficient) ://behave like a normal, ideal spring
+		Spring(Particle<_Size>* p1, Particle<_Size>* p2, double natural_length, double force_strength) :  // Behaves like an ideal spring
 			p1(p1), p2(p2),
-			naturalLength(naturalLength),
-			compressionForceCoefficient(forceCoefficient),
-			tensionForceCoefficient(forceCoefficient),
-			compressionForceType(SpringForceType::SPRING),
-			tensionForceType(SpringForceType::SPRING),
-			deformationCoefficient(0)
+			natural_length(natural_length),
+			compression_force_strength(force_strength),
+			tension_force_strength(force_strength),
+			compression_force_type(SpringForceType::SPRING),
+			tension_force_type(SpringForceType::SPRING),
+			deformation_coefficient(0)
 		{
-			if (p1 == p2) {//the two particles are actually the same, so abort the program
+			if (p1 == p2) {  // Attempting to attach both ends of connection to the same particle
 				std::cerr << "Error: cannot attach a particle to itself." << std::endl;
 				exit(EXIT_FAILURE);
 			}
 		}
-		Spring3D(Particle3D<dtype>* p1, Particle3D<dtype>* p2, dtype naturalLength,
-			dtype compressionForceCoefficient, dtype tensionForceCoefficient,
-			SpringType springType, dtype deformationCoefficient) ://behave like a normal, ideal spring
+		Spring(Particle<_Size>* p1, Particle<_Size>* p2, double natural_length,
+			double compression_force_strength, double tension_force_strength,
+			SpringType spring_type, double deformation_coefficient) :  // Behave like an ideal spring
 			p1(p1), p2(p2),
-			naturalLength(naturalLength),
-			deformationCoefficient(deformationCoefficient)
+			natural_length(natural_length),
+			deformation_coefficient(deformation_coefficient)
 		{
-			if (p1 == p2) {//the two particles are actually the same, so abort the program
+			if (p1 == p2) {  // Attempting to attach both ends of connection to the same particle
 				std::cerr << "Error: cannot attach a particle to itself." << std::endl;
 				exit(EXIT_FAILURE);
 			}
 
-			//select a pair of SpringForceTypes to match the desired spring behavior
-			switch (springType) {
+			// Select a pair of SpringForceTypes to match the desired connection behavior
+			switch (spring_type) {
 			case SpringType::BUNGEE:
-				compressionForceType = SpringForceType::NO_FORCE;
-				tensionForceType = SpringForceType::SPRING;
+				compression_force_type = SpringForceType::NO_FORCE;
+				tension_force_type = SpringForceType::SPRING;
 				break;
 			case SpringType::BOUNCY_ROPE:
-				compressionForceType = SpringForceType::NO_FORCE;
-				tensionForceType = SpringForceType::CONSTANT;
+				compression_force_type = SpringForceType::NO_FORCE;
+				tension_force_type = SpringForceType::CONSTANT;
 				break;
 			case SpringType::ROPE:
-				compressionForceType = SpringForceType::NO_FORCE;
-				tensionForceType = SpringForceType::STRONG;
+				compression_force_type = SpringForceType::NO_FORCE;
+				tension_force_type = SpringForceType::STRONG;
 				break;
 			case SpringType::SPRING:
-				compressionForceType = SpringForceType::SPRING;
-				tensionForceType = SpringForceType::SPRING;
+				compression_force_type = SpringForceType::SPRING;
+				tension_force_type = SpringForceType::SPRING;
 				break;
 			case SpringType::SPRING2:
-				compressionForceType = SpringForceType::SPRING;
-				tensionForceType = SpringForceType::CONSTANT;
+				compression_force_type = SpringForceType::SPRING;
+				tension_force_type = SpringForceType::CONSTANT;
 				break;
 			case SpringType::GELATIN:
-				compressionForceType = SpringForceType::SPRING;
-				tensionForceType = SpringForceType::STRONG;
+				compression_force_type = SpringForceType::SPRING;
+				tension_force_type = SpringForceType::STRONG;
 				break;
 			case SpringType::STRETCHY_BOUNCY:
-				compressionForceType = SpringForceType::CONSTANT;
-				tensionForceType = SpringForceType::SPRING;
+				compression_force_type = SpringForceType::CONSTANT;
+				tension_force_type = SpringForceType::SPRING;
 				break;
 			case SpringType::BOUNCY:
-				compressionForceType = SpringForceType::CONSTANT;
-				tensionForceType = SpringForceType::CONSTANT;
+				compression_force_type = SpringForceType::CONSTANT;
+				tension_force_type = SpringForceType::STRONG;
 				break;
 			case SpringType::BOUNCY2:
-				compressionForceType = SpringForceType::CONSTANT;
-				tensionForceType = SpringForceType::STRONG;
+				compression_force_type = SpringForceType::CONSTANT;
+				tension_force_type = SpringForceType::CONSTANT;
 				break;
 			case SpringType::SLINKY:
-				compressionForceType = SpringForceType::STRONG;
-				tensionForceType = SpringForceType::SPRING;
+				compression_force_type = SpringForceType::STRONG;
+				tension_force_type = SpringForceType::SPRING;
 				break;
 			case SpringType::SLINKY2:
-				compressionForceType = SpringForceType::STRONG;
-				tensionForceType = SpringForceType::CONSTANT;
+				compression_force_type = SpringForceType::STRONG;
+				tension_force_type = SpringForceType::CONSTANT;
 				break;
 			case SpringType::STRONG:
-				compressionForceType = SpringForceType::STRONG;
-				tensionForceType = SpringForceType::STRONG;
+				compression_force_type = SpringForceType::STRONG;
+				tension_force_type = SpringForceType::STRONG;
 				break;
+			case SpringType::MUSCLE:
+				compression_force_type = SpringForceType::MUSCLE;
+				tension_force_type = SpringForceType::MUSCLE;
 			}
 		}
-		Spring3D(Particle3D<dtype>* p1, Particle3D<dtype>* p2, dtype naturalLength,
-			dtype compressionForceCoefficient, dtype tensionForceCoefficient,
-			SpringForceType compressionForceType, SpringForceType tensionForceType,
-			dtype deformationCoefficient) :
+		Spring(Particle<_Size>* p1, Particle<_Size>* p2, double natural_length,
+			double compression_force_strength, double tension_force_strength,
+			SpringForceType compression_force_type, SpringForceType tension_force_type,
+			double deformation_coefficient) :
 			p1(p1), p2(p2),
-			naturalLength(naturalLength),
-			compressionForceCoefficient(compressionForceCoefficient),
-			tensionForceCoefficient(tensionForceCoefficient),
-			compressionForceType(compressionForceType),
-			tensionForceType(tensionForceType),
-			deformationCoefficient(deformationCoefficient)
+			natural_length(natural_length),
+			compression_force_strength(compression_force_strength),
+			tension_force_strength(tension_force_strength),
+			compression_force_type(compression_force_type),
+			tension_force_type(tension_force_type),
+			deformation_coefficient(deformation_coefficient)
 		{
-			if (p1 == p2) {//the two particles are actually the same, so abort the program
+			if (p1 == p2) {  // Attempting to attach both ends of connection to the same particle
 				std::cerr << "Error: cannot attach a particle to itself." << std::endl;
 				exit(EXIT_FAILURE);
 			}
 		}
 
+		// Apply the designated forces to the two particles.
 		void update(void) {
-			//apply forces to the two particles in order to retain the spring's natural length
-			Vector3D<dtype> P1toP2 = p2->pos - p1->pos;
-			dtype distance = magnitude(P1toP2);
-			dtype displacement;//extent to which the spring is compressed
-			dtype forceMagnitude;//magnitude of repulsive force between the particles
-			Vector3D<dtype> forceVector;
+			Tuple<_Size> P1toP2 = p2->pos - p1->pos;
+			double distance = magnitude(P1toP2);
+			P1toP2 = unit(P1toP2);
+			double displacement = distance - natural_length;  // Extent two which the spring is compressed
+			double force_magnitude;  // Magnitude of attractive force between the two particles
+			Tuple<_Size> force_vector;
 
-			SpringForceType forceTypeToCheck;
-			dtype forceCoefficientToUse;
+			SpringForceType force_type_to_check;
+			double force_coefficient_to_use;
 
-			dtype invMassSum;//sum of inverse masses of the two particles
-			dtype totalChange, mutualChangeVector;
+			double invMassSum;  // Sum of inverse masses of the two particles (used for STRONG connection types)
+			double total_change, mutual_change_vector;
 
-			if (distance != naturalLength) {//only apply force if there is force being applied to the spring
-				//deform the spring
-				naturalLength += (distance - naturalLength) * deformationCoefficient;
-				displacement = naturalLength - distance;
+			if (distance != naturalLength) {  // Only apply force if the connection is deformed
+				// Permanently deform the connection according to the deformation coefficient
+				natural_length += displacement * deformation_coefficient;
+				displacement = distance - natural_length;
 
-				//determine how to apply the force
-				if (distance < naturalLength) {
-					forceCoefficientToUse = compressionForceCoefficient;
-					forceTypeToCheck = compressionForceType;
+				// Determine how to apply the force
+				if (distance < natural_length) {
+					force_coefficient_to_use = compression_force_strength;
+					force_type_to_check = compression_force_type;
 				}
 				else {
-					forceCoefficientToUse = tensionForceCoefficient;
-					forceTypeToCheck = tensionForceType;
+					force_coefficient_to_use = tension_force_strength;
+					force_type_to_check = tension_force_type;
 				}
 
-				//determine the magnitude of the repulsive force vector
-				switch (forceTypeToCheck) {
-				case SpringForceType::NO_FORCE://do not apply any force
-					forceMagnitude = 0;
+				// Determine the magnitude of the attractive force
+				switch (force_type_to_check) {
+				case SpringForceType::NO_FORCE:  // Do not apply any force
+					return;
+				case SpringForceType::SPRING:  // Follow Hooke's law
+					force_magnitude = force_coefficient_to_use * displacement;
 					break;
-				case SpringForceType::SPRING://behave like a regular spring
-					forceMagnitude = forceCoefficientToUse * displacement;
+				case SpringForceType::CONSTANT:  // Apply a constant force
+					force_magnitude = force_coefficient_to_use * displacement / std::abs(displacement);
 					break;
-				case SpringForceType::CONSTANT://apply a constant force
-					forceMagnitude = forceCoefficientToUse;
-					break;
-				case SpringForceType::STRONG://do not allow any compression or tension
+				case SpringForceType::STRONG:  // Do not allow any deformation
 					invMassSum = p1->invMass + p2->invMass;
-					//adjust position
-					//total displacement should cause distance to equal naturalLength
-					mutualChangeVector = p1ToP2 * (forceCoefficientToUse * displacement / invMassSum);//displacement from the midpoint per kg for each particle
-					p1->pos -= mutualChangeVector * p1->invMass;
-					p2->pos += mutualChangeVector * p2->invMass;
+					// Adjust positions
+					// Total displacement should cause distance to equal naturalLength
+					mutual_change_vector = P1ToP2 * (force_coefficient_to_use * displacement / invMassSum);  // Displacement from the midpoint per kg for each particle
+					p1->pos -= mutual_change_vector * p1->invMass;
+					p2->pos += mutual_change_vector * p2->invMass;
 
-					//adjust velocity
-					//total velocity change should zero the relative velocity along the colinear axis
-					totalChange = dot(p1->vel, P1ToP2) - dot(p2->vel, P1toP2);//rate at which the particles are approaching each other
-					mutualChangeVector = P1toP2 * (forceCoefficientToUse * totalChange / invMassSum);//change in velocity from the midpoint per kg for each particle
-					p1->vel -= mutualChangeVector * p1->invMass;
-					p2->vel += mutualChangeVector * p2->invMass;
+					// Adjust velocities
+					// Total velocity change should zero the relative velocity along the colinear axis
+					total_change = dot(p1->vel, P1ToP2) - dot(p2->vel, P1toP2);  // Relative approaching speed of the particles
+					mutual_change_vector = P1toP2 * (force_coefficient_to_use * total_change / invMassSum);  // Change in velocity away from the midpoint per kg for each particle
+					p1->vel -= mutual_change_vector * p1->invMass;
+					p2->vel += mutual_change_vector * p2->invMass;
 
-					//adjust acceleration
-					//total acceleration change should zero the relative acceleration along the colinear axis
-					totalChange = dot(p1->acc, P1toP2) - dot(p2->acc, P1toP2);//rate at which the particles are accelerating toward each other
-					mutualChangeVector = P1toP2 * (forceCoefficientToUse * totalChange / invMassSum);//change in acceleration from the midpoint per kg for each particle
-					p1->acc -= mutualChangeVector * p1->invMass;
-					p2->acc += mutualChangeVector * p2->invMass;
+					// Adjust acceleration
+					// Total acceleration change should zero the relative acceleration along the colinear axis
+					total_change = dot(p1->acc, P1toP2) - dot(p2->acc, P1toP2);  // Rate at which the particles are accelerating toward each other
+					mutual_change_vector = P1toP2 * (force_coefficient_to_use * total_change / 2);  // Change in acceleration from the midpoint per kg for each particle
+					p1->acc -= mutual_change_vector;
+					p2->acc += mutual_change_vector;
 
-					//adjust force
-					//total force change should zero the relative force along the colinear axis
+					// Adjust force
+					// Total force change should zero the relative force along the colinear axis
 					totalChange = dot(p1->F, P1toP2) - dot(p2->F, P1toP2);
-					mutualChangeVector = P1toP2 * forceCoefficientToUse * totalChange;//change in force from the midpoint per particle
+					mutualChangeVector = P1toP2 * (force_coefficient_to_use * total_change / 2);  // Change in force from the midpoint per particle
 					p1->F -= mutualChangeVector;
 					p2->F += mutualChangeVector;
 
-					forceMagnitude = 0;//no more forces are necessary
-					break;
+					return;  // No additional forces need to be applied
 				}
 
-				//apply the force if necessary
-				if (forceMagnitude != 0) {
-					forceVector = P1toP2 * forceMagnitude;
+				forceVector = P1toP2 * force_magnitude;
+				p1->F += force_vector;
+				p2->F -= force_vector;
+			}
+		}
 
-					p1->F -= forceVector;
-					p1->F += forceVector;
+		friend class Object;
+	};
+
+	/*
+	Class Object - represents a structured collection of particles, connected by springs.
+	*/
+	template <std::size_t _Size>
+	class Object {
+	private:
+		std::vector<Particle<_Size>*> particles;
+		std::vector<Spring<_Size> > connections;
+	public:
+		Object(void) {}
+		// Instantiate the object with the given collection of particles with a connection of the given type between each pair.
+		Object(std::vector<Particle<_Size>*> particles, SpringType connection_type,
+			double strength, double deformation_coeffient) :
+			particles(particles)
+		{
+			// Create a connection between each pair of particles.
+			for (std::uint8_t i = 0; i < particles.size() - 1; i++) {
+				for (std::uint8_t j = i + 1; j < particles.size(); j++) {
+					Spring new_connection(particles.at(i), particles.at(j),
+						magnitude(particles.at(i).pos - particles.at(j).pos),
+						strength, strength,
+						connection_type, deformation_coeffient);
+					connections.push_back(new_connection);
 				}
 			}
 		}
 
-		template <class dtype>
-		friend class Object3D;
-	};
-
-	template <class dtype>
-	class Object3D {
-	private:
-		std::vector<Particle3D<dtype>*> particles;
-		std::vector<Spring3D<dtype> > springs;
-	public:
-		Object3D(void) {}
-		Object3D(const Object3D<dtype>& o) :
-			particles(o.particles),
-			springs(o.springs)
-		{}
-
-		void addSpring(Spring3D<dtype> newSpring) {//add the spring and its particles to this object
-			//add the particles to the list if they are not there already
-			if (std::find(particles.begin(), particles.end(), newSpring.p1) != particles.end())
-				particles.push_back(newSpring.p1);
-			if (std::find(particles.begin(), particles.end(), newSpring.p2) != particles.end())
-				particles.push_back(newSpring.p2);
-			//add the spring to the list
-			springs.push_back(newSpring);
+		// Add the given connection and its particles to this object
+		void addSpring(Spring<_Size> new_connection) {
+			// Check whether the particles are already in the list and add them if they are not
+			if (std::find(particles.begin(), particles.end(), new_spring.p1) == particles.end())
+				particles.push_back(new_connection.p1);
+			if (std::find(particles.begin(), particles.end(), new_spring.p2) == particles.end())
+				particles.push_back(new_connection.p2);
+			// Add the connection to the list
+			springs.push_back(new_connection);
 		}
+
+		// Apply forces given by all internal particle connections.
 		void update(void) {
-			//apply spring forces to all member particles
-			for (auto spring : springs)
-				spring.update();
+			for (auto connection : connections)
+				connection.update();
 		}
 
-		template <class dtype>
-		friend class Simulator3D;
+		// Return the center of mass.
+		Tuple<_Size> centerOfMass(void) {
+			Tuple<_Size> out(true);
+			double total_mass = 0.;
+
+			for (Particle<_Size> p : particles) {
+				out += p.mass * p.pos;
+				total_mass += p.mass;
+			}
+
+			return out / total_mass;
+		}
+
+		friend class Simulator;
 	};
 
-	template <class dtype>
-	void resolveObjectCollision3D(Object3D<dtype>& object1, Object3D<dtype>& object2) {
-		//detect and resolve any collisions between the two objects
+	// Detect and resolve collisions between the given objects. Only works for convex shapes.
+	template <std::size_t _Size>
+	void resolveObjectCollision(Object<_Size>& object1, Object<_Size>& object2) {
+		Tuple<_Size> object1COM = object1.centerOfMass(),
+			object2COM = object2.centerOfMass();
+		Tuple<_Size> axis1to2 = object2COM - object1COM;
+		double distance = magnitude(axis1to2);
+		axis1to2 /= distance;
+		Particle<_Size>* closest_from_object1,  // Farthest particle from object1 when projected onto axis1to2
+			*closest_from_object2;  // Farthest particle from object2 when projected onto axis1to2
+		double max_projection1 = 0.,
+			min_projection2 = 0.;
+		double curr_projection;
+		bool colliding;
+
+		// Find the farthest projected particle from object1
+		for (Particle<_Size>* p : object1.particles) {
+			curr_projection = projection_scalar(p.pos - object1COM, axis1to2);
+			if (curr_projection > max_projection1) {
+				max_projection1 = curr_projection;
+				closest_from_object1 = p;
+			}
+		}
+
+		// Find the farthest projected particle from object2
+		for (Particle<_Size>* p : object2.particles) {
+			curr_projection = projection_scalar(p.pos - object2COM, axis1to2);
+			if (curr_projection < max_projection2) {
+				max_projection2 = curr_projection;
+				closest_from_object2 = p;
+			}
+		}
+
+		// Determine whether the two shapes are intersecting
+		colliding = max_projection1 >= distance + min_projection2;
 	}
 }
 
