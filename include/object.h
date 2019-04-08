@@ -6,7 +6,7 @@
 #ifndef PHYSICS_SIMULATOR_PHYSICS_OBJECT_H
 #define PHYSICS_SIMULATOR_PHYSICS_OBJECT_H
 
-#include "vector.h"
+#include "tuple.h"
 #include "particle.h"
 #include <vector>
 #include <iostream>
@@ -14,24 +14,24 @@
 
 namespace PhysicsSimulator {
 	enum class SpringForceType {
-		SPRING,//behaves like a regular spring
-		CONSTANT,//always applies the same amount of force to retain shape
-		STRONG,//unable to be compressed or pulled when forceCoefficient is 1
-		NO_FORCE//does nothing
+		SPRING,  // Behaves like an ideal spring
+		CONSTANT,  // Always applies the same amount of force to retain shape
+		FIXED,  // Unable to be compressed or pulled when forceCoefficient is 1
+		MUSCLE  // Force can be controlled dynamically
 	};
 	enum class SpringType {
-		BUNGEE,//too short: no force | too long: spring force
-		BOUNCY_ROPE,//too short: no force | too long: constant force
-		ROPE,//too short: no force | too long: brute force
-		SPRING,//too short: spring force | too long: spring force
-		SPRING2,//too short: spring force | too long: constant force
-		GELATIN,//too short: spring force | too long: brute force
-		STRETCHY_BOUNCY,//too short: constant force | too long: spring force
-		BOUNCY,//too short: constant force | too long: constant force
-		BOUNCY2,//too short: constant force | too long: brute force
-		SLINKY,//too short: brute force | too long: spring force
-		SLINKY2,//too short: brute force | too long: constant force
-		STRONG//too short: brute force | too long: brute force
+		BUNGEE,  //: no force | too long: spring force
+		BOUNCY_ROPE,  //too short: no force | too long: constant force
+		ROPE,  //too short: no force | too long: brute force
+		SPRING,  //too short: spring force | too long: spring force
+		SPRING2,  //too short: spring force | too long: constant force
+		GELATIN,  //too short: spring force | too long: brute force
+		STRETCHY_BOUNCY,  //too short: constant force | too long: spring force
+		BOUNCY,  //too short: constant force | too long: constant force
+		BOUNCY2,  //too short: constant force | too long: brute force
+		SLINKY,  //too short: brute force | too long: spring force
+		SLINKY2,  //too short: brute force | too long: constant force
+		STRONG  //too short: brute force | too long: brute force
 	};
 
 	template <class dtype>

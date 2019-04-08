@@ -8,8 +8,34 @@
 
 #include <cmath>
 #include <iostream>
+#include <array>
 
 namespace PhysicsSimulator {
+	template <std::size_t _Size>
+	struct VectorNDFast {
+	private:
+		static std::uint8_t i;
+	public:
+		std::array<double, _Size> value;
+
+		VectorNDFast(void) {
+			setZero();
+		}
+		template <typename T>
+		VectorNDFast(const std::array<T, _Size> v) :
+			value(v)
+		{}
+		VectorNDFast(const VectorNDFFast<_Size>& v) :
+			value(v.value)
+		{}
+		VectorNDFast<_Size>& operator=(const VectorNDFast<_Size>& v);
+		template <typename T>
+		VectorNDFast<_Size>& operator=(const std::array<T, _Size>& v);
+
+		void setZero(void);
+
+	};
+
 	template <class dtype>
 	struct Vector2D {
 		dtype x, y;
