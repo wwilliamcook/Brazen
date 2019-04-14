@@ -1,7 +1,6 @@
-//simulator.h
-//Written by Weston Cook
-//19 Aug. 2018
-//defines the class Simulator3D
+// simulator.h
+// Written by Weston Cook
+// Defines the class Simulator
 
 #ifndef PHYSICS_SIMULATOR_SIMULATOR_H
 #define PHYSICS_SIMULATOR_SIMULATOR_H
