@@ -25,8 +25,9 @@ Features:
 -Return vector projection of two vectors
 
 NOTE: Explicit specializations are defined for _Size = 2, 3 for computational efficiency.
+WARNING: For efficiency, Tuple uses type std::uint8_t for its dimension, so dimensions greater than 255 are not allowed.
 */
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 struct Tuple {
 	std::array<double, _Size> value;
 
@@ -232,7 +233,7 @@ struct Tuple<3> {
 /*************NOT IN PLACE************/
 // SCALAR VECTOR MULTIPLICATION
 // vector, scalar
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> operator*(const Tuple<_Size>& v, double s) {
 	Tuple<_Size> out(false);
 
@@ -248,7 +249,7 @@ inline Tuple<3> operator*(const Tuple<3>& v, double s) {
 	return Tuple<3>(v.x * s, v.y * s, v.z * s);
 }
 // vector, scalar
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> operator*(double s, const Tuple<_Size>& v) {
 	Tuple<_Size> out(false);
 
@@ -264,7 +265,7 @@ inline Tuple<3> operator*(double s, const Tuple<3>& v) {
 	return Tuple<3>(v.x * s, v.y * s, v.z * s);
 }
 // SCALAR VECTOR DIVISION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> operator/(const Tuple<_Size>& v, double s) {
 	Tuple<_Size> out(false);
 
@@ -280,7 +281,7 @@ inline Tuple<3> operator/(const Tuple<3>& v, double s) {
 	return Tuple<3>(v.x / s, v.y / s, v.z / s);
 }
 // VECTOR ADDITION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> operator+(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	Tuple<_Size> out(false);
 
@@ -296,7 +297,7 @@ inline Tuple<3> operator+(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return Tuple<3>(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
 }
 // VECTOR SUBTRACTION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> operator-(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	Tuple<_Size> out(false);
 
@@ -312,7 +313,7 @@ inline Tuple<3> operator-(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return Tuple<3>(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
 }
 // DOT PRODUCT
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 double dot(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	double sum = 0.;
 
@@ -332,7 +333,7 @@ inline Tuple<3> cross(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return Tuple<3>(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
 }
 // MAGNITUDE
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 double magnitudeSquared(const Tuple<_Size>& v) {
 	double sum = 0.;
 
@@ -347,7 +348,7 @@ inline double magnitudeSquared(const Tuple<2>& v) {
 inline double magnitudeSquared(const Tuple<3>& v) {
 	return v.x * v.x + v.y * v.y + v.z * v.z;
 }
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 inline double magnitude(const Tuple<_Size>& v) {
 	return sqrt(magnitudeSquared(v));
 }
@@ -362,7 +363,7 @@ double random_angle(void) {  // Helper function containing static objects used f
 
 	return distribution(generator);
 };
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit N-sphere.
 	std::array<double, _Size - 1> angles;  // Array containing the generalized spherical coordinates of the vector (without radius)
 	Tuple<_Size> out(false);  // Output Tuple
@@ -407,7 +408,7 @@ Tuple<3> random_unit(void) {  // Return a randomly oriented unit vector from a d
 	return Tuple<3>(std::sin(phi)*std::cos(theta), std::sin(phi)*std::sin(theta), std::cos(phi));
 }
 // UNIT
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
 	// Compute the magnitude of the vector
 	double mag = magnitude(v);
@@ -427,12 +428,12 @@ Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
 }
 // VECTOR PROJECTION
 // Scalar projection of v1 onto v2.
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 double projection_scalar(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	return dot(v1, v2) / magnitude(v2);
 }
 // Vector projection of v1 onto v2.
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> projection_vector(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	return v2 * (dot(v1, v2) / magnitudeSquared(v2));
 }
@@ -440,7 +441,7 @@ Tuple<_Size> projection_vector(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 
 /***************IN PLACE OPERATIONS***************/
 // SCALAR VECTOR MULTIPLICATION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size>& operator*=(Tuple<_Size>& v, double s) {
 	for (std::uint8_t i = 0; i < _Size; i++)
 		v.value[i] *= s;
@@ -461,7 +462,7 @@ Tuple<3>& operator*=(Tuple<3>& v, double s) {
 	return v;
 }
 // SCALAR VECTOR DIVISION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size>& operator/=(Tuple<_Size>& v, double s) {
 	for (std::uint8_t i = 0; i < _Size; i++)
 		v.value[i] /= s;
@@ -482,7 +483,7 @@ Tuple<3>& operator/=(Tuple<3>& v, double s) {
 	return v;
 }
 // VECTOR ADDITION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> operator+=(Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	for (std::uint8_t i = 0; i < _Size; i++)
 		v1.value[i] += v2.value[i];
@@ -503,7 +504,7 @@ Tuple<3> operator+=(Tuple<3>& v1, const Tuple<3>& v2) {
 	return v1;
 }
 // VECTOR SUBTRACTION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 Tuple<_Size> operator-=(Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	for (std::uint8_t i = 0; i < _Size; i++)
 		v1.value[i] -= v2.value[i];
@@ -524,7 +525,7 @@ Tuple<3> operator-=(Tuple<3>& v1, const Tuple<3>& v2) {
 	return v1;
 }
 // STREAM INSERTION
-template <std::size_t _Size>
+template <std::uint8_t _Size>
 std::ostream& operator<<(std::ostream &s, const Tuple<_Size>& v) {
 	s << "< " << v.value[0];
 

@@ -11,7 +11,9 @@
 struct color {
 	uint16_t R, G, B;
 
-	color(void) {}
+	color(void):
+		R(0), G(0), B(0)
+	{}
 	color(uint16_t R, uint16_t G, uint16_t B) :
 		R(R), G(G), B(B)
 	{}
@@ -28,13 +30,13 @@ namespace PhysicsSimulator {
 		color colorVal;
 
 		// Constructors
-		Particle(Tuple<_Size> pos, double mass, color colorVal) :
+		Particle(Tuple<_Size> pos, double mass, color colorVal = color()) :
 			mass(mass),
 			invMass(mass > 0 ? 1. / mass : 0.),
 			pos(pos),
 			colorVal(colorVal)
 		{}
-		Particle(Tuple<_Size> pos, double mass, double invMass, color colorVal) :
+		Particle(Tuple<_Size> pos, double mass, double invMass, color colorVal = color()) :
 			mass(mass),
 			invMass(invMass),
 			pos(pos),

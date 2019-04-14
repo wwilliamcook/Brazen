@@ -6,151 +6,136 @@
 #ifndef PHYSICS_SIMULATOR_SIMULATOR_H
 #define PHYSICS_SIMULATOR_SIMULATOR_H
 
+#include "tuple.h"
 #include "particle.h"
+#include "spring.h"
 #include "object.h"
-#include <vector>//std::vector
+#include <vector>  // std::vector
 #include <chrono>
-#include <atomic>//std::atomic_bool
-#include <mutex>//std::mutex
-#include <thread>//std::thread
-#include <stdlib.h>//uint32_t
-#include <algorithm>//std::find
+#include <atomic>  // std::atomic_bool
+#include <mutex>  // std::mutex, std::lock_guard
+#include <thread>  // std::thread
+#include <stdlib.h>  // std::uint32_t
+#include <algorithm>  // std::find
 
 namespace PhysicsSimulator {
 	typedef std::chrono::time_point<std::chrono::steady_clock> time_point;
 
-	template <std::size_t _Size>
-	class simulator {
+	/*
+	Class Simulator - stores and manages all particle information and exposes environment state through a std::vector<OutputParticle>.
+	*/
+	template <std::uint8_t _Size>
+	class Simulator {
 	private:
-		
-	};
-	template <class dtype>
-	class Simulator3D {
-	private:
-		std::vector<Object3D<dtype>> objects;
-		std::vector<Particle3D<dtype>*> particles;
+		// ATTRIBUTES
+		std::vector<Particle<_Size> > particles;  // Stores all the particles
+		std::vector<Spring<_Size> > springs;  // Stores all the particle connections
+		std::vector<Object<_Size> > objects;  // Stores all the objects
 
-		OutputParticle3D<dtype>* incompleteOutput;//stores the output that is currently being generated
-		OutputParticle3D<dtype>* latestCompleteOutput;//stores the most recent complete output
-		std::mutex outputMutex;
-		std::atomic_bool outputIsReady;
+		// Vectors containing the output data. Basically, the output generator juggles
+		//	the "write_output" and "latest_output" pointers and the "getOutput()" function
+		//	swaps the "latest_output" and "read_output" pointers.
+		std::vector<OutputParticle<_Size> >* write_output;  // Output list that is currently being written to
+		std::vector<OutputParticle<_Size> >* latest_output;  // Output list that has just been written to
+		std::vector<OutputParticle<_Size> >* read_output;  // Output list that is protected for reading
+
+		std::mutex output_mutex;  // Mutex required to modify the three output list pointers above
+		std::lock_guard<std::mutex> output_lock;  // Lock used to acquire "output_mutex"
+		std::atomic_bool output_is_ready;  // Marked true at the end of every physics loop and marked false every time "updateOutput" returns true
+
+		std::mutex physics_mutex;  // Mutex required to read/modify "particles," "springs," or "objects"
+		std::lock_guard<std::mutex> physics_lock;  // Lock used to acquire "physics_mutex"
 
 		std::atomic_bool running;
-
-		std::thread physicsThread;
+		std::thread physics_thread;
 	public:
-		Simulator3D(void)
-		{
-			incompleteOutput = latestCompleteOutput = nullptr;
-			running = false;
-			outputIsReady = false;
+		// CONSTRUCTORS
+		Simulator(void) :  // Allocate output pointers and initialize booleans
+			write_output(new std::vector<OutputParticle<_Size> >),
+			latest_output(new std::vector<OutputParticle<_Size> >),
+			read_output(new std::vector<OutputParticle<_Size> >),
+			output_is_ready(false), running(false)
+		{}
+		~Simulator(void) {  // Free memory used by output pointers
+			delete write_output;
+			delete latest_output;
+			delete read_output;
 		}
 
-		void start(void) {
-			running = true;
+		// MEMBER FUNCTIONS
+		// Copy the given Particle into the simulation environment.
+		void addParticle(Particle<_Size> new_particle);
+		// Create a copy of the given Spring that connects the two particles with the given indices.
+		void attachParticles(int p1_index, int p2_index, Spring<_Size> spring);
+		// Create an object composed of the particles with the given indices.
+		void createObject(std::vector<int> indices);
+		// Create an object composed of the particles with the given indices as a fully-connected graph using copies the given spring.
+		void createObject(std::vector<int> indices, Spring<_Size> spring);
 
-			if (incompleteOutput != nullptr) {
-				delete[] incompleteOutput;
-				incompleteOutput = nullptr;
-			}
-			if (latestCompleteOutput != nullptr) {
-				delete[] latestCompleteOutput;
-				latestCompleteOutput = nullptr;
-			}
-			incompleteOutput = new OutputParticle3D<dtype>[particles.size()];
-			latestCompleteOutput = new OutputParticle3D<dtype>[particles.size()];
 
-			//start the physics loop on a separate thread
-			physicsThread = std::thread(&Simulator3D::runPhysics, this);
-		}
-		void stop(void) {
-			running = false;
-			//wait for the physics loop to end
-			physicsThread.join();
-		}
+		// Start the physics engine in a separate thread.
+		void start(void);
+		// Stop the physics engine.
+		void stop(void);
 
-		bool getOutput(std::vector<OutputParticle3D<dtype> >& output) {
-			//attempt to get the latest output
-			if (outputIsReady.load()) {
-				uint32_t i;
 
-				output.clear();
-
-				outputMutex.lock();
-
-				//copy the output
-				for (i = 0; i < particles.size(); i++)
-					output.push_back(latestCompleteOutput[i]);
-
-				outputIsReady = false;
-				outputMutex.unlock();
-
-				return true;
-			}
-			else
-				return false;
-		}
-
-		bool addParticle(Particle3D<dtype>* newParticle) {
-			particles.push_back(newParticle);
-
-			return true;
-		}
-		bool addObject(const Object3D<dtype>& newObject) {
-			uint16_t i;
-
-			if (!running.load()) {
-				//add the object
-				objects.push_back(newObject);
-				//add its particles
-				for (i = 0; i < newObject.particles.size(); i++)
-					if (std::find(particles.begin(), particles.end(), newObject.particles.at(i)) != particles.end())
-						particles.push_back(newObject.particles.at(i));
-
-				return true;
-			}
-			else
-				return false;
-		}
+		// Update the output source and return whether it contains new data.
+		bool updateOutput(void);
+		// Return a reference to the latest std::vector<OutputParticle>.
+		const std::vector<OutputParticle<_Size> >& getOutput(void);
 	private:
-		void runPhysics(void) {
-			uint32_t i, j;
-			double secondsSinceLastUpdate;
-			OutputParticle3D<dtype>* tempOutputArray;
-			time_point now, lastCycleTime;
-
-			now = std::chrono::steady_clock::now();
-			lastCycleTime = now;
-
-			while (running.load()) {
-				//update clock
-				now = std::chrono::steady_clock::now();
-				secondsSinceLastUpdate = std::chrono::duration_cast<std::chrono::nanoseconds>(now - lastCycleTime).count() * 0.000000001;
-				lastCycleTime = now;
-
-				for (i = 0; i < objects.size(); i++) {
-					for (j = i + 1; j < objects.size(); j++)
-						resolveObjectCollision3D(objects[i], objects[j]);
-				}
-
-				for (i = 0; i < particles.size(); i++) {
-					particles[i]->update(secondsSinceLastUpdate);
-					incompleteOutput[i] = OutputParticle3D<dtype>(*particles[i]);
-				}
-
-				//attempt to update the output arrays
-				if (outputMutex.try_lock()) {
-					//swap the output arrays
-					tempOutputArray = latestCompleteOutput;
-					latestCompleteOutput = incompleteOutput;
-					incompleteOutput = tempOutputArray;
-					//set the output flag
-					outputIsReady = true;
-					outputMutex.unlock();
-				}
-			}
-		}
+		// Perform one cycle of physics calculations and update the output pointers.
+		void updateState(void);
 	};
+
+
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::addParticle(Particle<_Size> new_particle) {
+
+	}
+
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::attachParticles(int p1_index, int p2_index, Spring<_Size> spring) {
+
+	}
+
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::createObject(std::vector<int> indices) {
+
+	}
+	
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::createObject(std::vector<int> indices, Spring<_Size> spring) {
+
+	}
+
+
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::start(void) {
+
+	}
+
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::stop(void) {
+
+	}
+
+
+	template <std::uint8_t _Size>
+	bool Simulator<_Size>::updateOutput(void) {
+		return false;
+	}
+
+	template <std::uint8_t _Size>
+	const std::vector<OutputParticle<_Size> >& Simulator<_Size>::getOutput(void) {
+
+	}
+
+
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::updateState(void) {
+
+	}
 }
 
 
