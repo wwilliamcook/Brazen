@@ -19,42 +19,13 @@ namespace PhysicsSimulator {
 	template <std::uint8_t _Size>
 	class Object {
 	private:
-		std::vector<Particle<_Size>*> particles;
-		std::vector<Spring<_Size> > connections;
+		std::vector<std::uint32_t> particle_indices;
 	public:
 		Object(void) {}
 		// Instantiate the object with the given collection of particles with a connection of the given type between each pair.
-		Object(std::vector<Particle<_Size>*> particles, SpringType connection_type,
-			double strength, double deformation_coeffient) :
-			particles(particles)
+		Object(std::vector<std::uint32_t> particle_indices, const Spring<_Size>& spring) :
+			particle_indices(particle_indices)
 		{
-			// Create a connection between each pair of particles.
-			for (std::uint8_t i = 0; i < particles.size() - 1; i++) {
-				for (std::uint8_t j = i + 1; j < particles.size(); j++) {
-					Spring new_connection(particles.at(i), particles.at(j),
-						magnitude(particles.at(i).pos - particles.at(j).pos),
-						strength, strength,
-						connection_type, deformation_coeffient);
-					connections.push_back(new_connection);
-				}
-			}
-		}
-
-		// Add the given connection and its particles to this object
-		void addSpring(Spring<_Size> new_connection) {
-			// Check whether the particles are already in the list and add them if they are not
-			if (std::find(particles.begin(), particles.end(), new_spring.p1) == particles.end())
-				particles.push_back(new_connection.p1);
-			if (std::find(particles.begin(), particles.end(), new_spring.p2) == particles.end())
-				particles.push_back(new_connection.p2);
-			// Add the connection to the list
-			springs.push_back(new_connection);
-		}
-
-		// Apply forces given by all internal particle connections.
-		void update(void) {
-			for (auto connection : connections)
-				connection.update();
 		}
 
 		// Return the center of mass.

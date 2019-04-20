@@ -41,7 +41,7 @@ namespace PhysicsSimulator {
 	template <std::uint8_t _Size>
 	class Spring {
 		// ATTRIBUTES
-		Particle<_Size> *p1, *p2;
+		std::uint32_t p1_index, p2_index;
 
 		double natural_length;  // Distance at which the connected particles can be at equilibrium
 		double compression_force_strength,  // Strength of force to apply when the connection is compressed
@@ -52,8 +52,8 @@ namespace PhysicsSimulator {
 		double deformation_coefficient;  // Mutability of "natural_length" due to prolonged deformation. Value of 0 allows no deformation; value of 1 provides no resistance to deformation.
 
 		// CONSTRUCTORS
-		Spring(Particle<_Size>* p1, Particle<_Size>* p2, double natural_length, double force_strength) :  // Behaves like an ideal spring
-			p1(p1), p2(p2),
+		Spring(std::uint32_t p1_index, std::uint32_t p2_index, double natural_length, double force_strength) :  // Behaves like an ideal spring
+			p1_index(p1_index), p2_index(p2_index),
 			natural_length(natural_length),
 			compression_force_strength(force_strength),
 			tension_force_strength(force_strength),
@@ -66,10 +66,10 @@ namespace PhysicsSimulator {
 				exit(EXIT_FAILURE);
 			}
 		}
-		Spring(Particle<_Size>* p1, Particle<_Size>* p2, double natural_length,
+		Spring(std::uint32_t p1_index, std::uint32_t p2_index, double natural_length,
 			double compression_force_strength, double tension_force_strength,
 			SpringType spring_type, double deformation_coefficient) :  // Behave like an ideal spring
-			p1(p1), p2(p2),
+			p1_index(p1_index), p2_index(p2_index),
 			natural_length(natural_length),
 			deformation_coefficient(deformation_coefficient)
 		{
@@ -131,12 +131,26 @@ namespace PhysicsSimulator {
 			case SpringType::MUSCLE:
 				compression_force_type = SpringForceType::MUSCLE;
 				tension_force_type = SpringForceType::MUSCLE;
+				throw std::exception("SpringType \"MUSCLE\" has not been implemented yet.");
 			}
 		}
+		Spring(const Spring<_Size>& s) :
+			p1_index(s.p1_index), p2_index(s.p2_index),
+			natural_length(s.natural_length),
+			compression_force_strength(s.compression_force_strength),
+			tension_force_strength(s.tension_force_strength),
+			compression_force_type(s.compression_force_type),
+			tension_force_type(s.tension_force_type),
+			deformation_coefficient(s.deformation_coefficient)
+		{}
 
 		// MEMBER FUNCTIONS
 		// Apply the designated forces to the two particles.
-		void update(void) {
+		void update(std::vector<Particle<_Size> >& particles) {
+			// Acquire pointers to the particles that need to be updated
+			Particle<_Size> *p1 = particles.at(p1_index),
+				*p2 = particles.at(p2_index);
+
 			Tuple<_Size> P1toP2 = p2->pos - p1->pos;
 			double distance = magnitude(P1toP2);
 			P1toP2 = unit(P1toP2);
@@ -147,11 +161,12 @@ namespace PhysicsSimulator {
 			SpringForceType force_type_to_check;
 			double force_coefficient_to_use;
 
-			double invMassSum;  // Sum of inverse masses of the two particles (used for STRONG connection types)
+			double invinvMassSum;  // Inverse sum of inverse masses of the two particles (used for STRONG connection types)
+			Tuple<_Size> m_delta_pos(false), m_delta_vel(false), delta_F(false);
 			double total_change, mutual_change_vector;
 
 			if (distance != naturalLength) {  // Only apply force if the connection is deformed
-				// Permanently deform the connection according to the deformation coefficient
+				// Deform the natural length according to the deformation coefficient
 				natural_length += displacement * deformation_coefficient;
 				displacement = distance - natural_length;
 
@@ -173,29 +188,48 @@ namespace PhysicsSimulator {
 					force_magnitude = force_coefficient_to_use * displacement;
 					break;
 				case SpringForceType::CONSTANT:  // Apply a constant force
-					force_magnitude = force_coefficient_to_use * displacement / std::abs(displacement);
+					if (displacement >= 0)  // Too far apart => positive attractive force
+						force_magnitude = force_coefficient_to_use;
+					else  // Too close together => negative attractive force
+						force_magnitude = -force_coefficient_to_use;
 					break;
 				case SpringForceType::STRONG:  // Do not allow any deformation
-					invMassSum = p1->invMass + p2->invMass;
-					// Adjust positions
-					// Total displacement should cause distance to equal naturalLength
-					mutual_change_vector = P1ToP2 * (force_coefficient_to_use * displacement / invMassSum);  // Displacement from the midpoint per kg for each particle
-					p1->pos -= mutual_change_vector * p1->invMass;
-					p2->pos += mutual_change_vector * p2->invMass;
+					// Calculate the inverse sum of inverse masses
+					invinvMassSum = p1->invMass + p2->invMass;
+					invinvMassSum = (invinvMassSum > 0) ? (1. / invinvMassSum) : 0;  // Zero means that both particles have infinite mass
 
-					// Adjust velocities
-					// Total velocity change should zero the relative velocity along the colinear axis
-					total_change = dot(p1->vel, P1ToP2) - dot(p2->vel, P1toP2);  // Relative approaching speed of the particles
-					mutual_change_vector = P1toP2 * (force_coefficient_to_use * total_change / invMassSum);  // Change in velocity away from the midpoint per kg for each particle
-					p1->vel -= mutual_change_vector * p1->invMass;
-					p2->vel += mutual_change_vector * p2->invMass;
+					// Calculate mass*position change -- Total displacement should cause distance to equal naturalLength
+					m_delta_pos = P1toP2 * (force_coefficient_to_use * displacement * invinvMassSum);
+					// Calculate mass*velocity change -- Total velocity change should zero the relative velocity along the colinear axis
+					m_delta_vel = P1toP2 * (force_coefficient_to_use * (dot(p1->vel, P1toP2) - dot(p2->vel, P1toP2)) * invinvMassSum);
 
-					// Adjust acceleration
-					// Total acceleration change should zero the relative acceleration along the colinear axis
-					total_change = dot(p1->acc, P1toP2) - dot(p2->acc, P1toP2);  // Rate at which the particles are accelerating toward each other
-					mutual_change_vector = P1toP2 * (force_coefficient_to_use * total_change / 2);  // Change in acceleration from the midpoint per kg for each particle
-					p1->acc -= mutual_change_vector;
-					p2->acc += mutual_change_vector;
+					if (invinvMassSum > 0) {  // At least one of the particles has finite mass
+						// Apply position change
+						p1->m_delta_pos -= m_delta_pos;
+						p2->m_delta_pos += m_delta_pos;
+						
+						// Apply velocity change
+						p1->m_delta_vel -= m_delta_vel;
+						p2->m_delta_vel += m_delta_vel;
+
+						// Calculate the mass**acceleration change -- Total acceleration change should zero the relative acceleration along the colinear axis
+						delta_F = P1toP2 * (force_coefficient_to_use * (p1->invMass*dot(p1->F, P1toP2) - p2->invMass*dot(p2->F, P1toP2)) * invinvMassSum);
+
+						// Apply acceleration change
+						p1->F -= delta_F;
+						p2->F += delta_F;
+					}
+					else {  // Both particles have infinite mass
+						// Apply position change
+						p1->m_delta_pos_hard -= m_delta_pos;
+						p2->m_delta_pos_hard += m_delta_pos;
+
+						// Apply velocity change
+						p1->m_delta_vel_hard -= m_delta_vel;
+						p2->m_delta_vel_hard += m_delta_vel;
+
+						// Objects of infinite mass don't accelerate, so nothing to do
+					}
 
 					// Adjust force
 					// Total force change should zero the relative force along the colinear axis
@@ -205,6 +239,9 @@ namespace PhysicsSimulator {
 					p2->F += mutualChangeVector;
 
 					return;  // No additional forces need to be applied
+				case SpringForceType::MUSCLE:
+					return;  // NOT IMPLEMENTED
+					break;
 				}
 
 				forceVector = P1toP2 * force_magnitude;

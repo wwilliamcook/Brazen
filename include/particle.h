@@ -57,9 +57,14 @@ namespace PhysicsSimulator {
 			invMass(invMass),
 			colorVal(color)
 		{}
+		Particle(const Particle<_Size>& p) :
+			pos(p.pos), vel(p.vel),
+			mass(p.mass), invMass(p.invmass),
+			colorVal(p.colorVal)
+		{}
 		
 		// MEMBER FUNCTIONS
-		void update(double secondsSinceLastUpdate) {
+		void update(double seconds_per_cycle) {
 			// Update the particle's acceleration, velocity, and position to reflect the forces applied to it
 			if (invMass > 0) {
 				// Ragdoll physics updates
@@ -67,7 +72,7 @@ namespace PhysicsSimulator {
 				pos += m_delta_pos * invMass;
 
 				// Classical velocity update
-				vel += F * (invMass * secondsSinceLastUpdate);
+				vel += F * (invMass * seconds_per_cycle);
 			}
 			else {
 				// Other ragdoll physics updates
@@ -83,7 +88,7 @@ namespace PhysicsSimulator {
 			m_delta_pos.setZero();
 
 			// Classical position update
-			pos += vel * secondsSinceLastUpdate;
+			pos += vel * seconds_per_cycle;
 
 			F.setZero();  // Reset the net force on the particle
 		}
