@@ -30,37 +30,31 @@ namespace PhysicsSimulator {
 		Tuple<_Size> m_delta_pos, m_delta_vel;  // Additional properties for ragdoll physics
 		Tuple<_Size> m_delta_pos_hard, m_delta_vel_hard;  // Even more properties for ragdoll physics
 		double mass, invMass;
-		color colorVal;
 
 		// CONSTRUCTORS
-		Particle(Tuple<_Size> pos, double mass, color colorVal = color()) :
-			pos(pos),
+		Particle(Tuple<_Size> pos, double mass) :
+			pos(pos), vel(true), F(true),
 			mass(mass),
-			invMass(mass > 0 ? 1. / mass : 0.),
-			colorVal(colorVal)
+			invMass(mass > 0 ? 1. / mass : 0.)
 		{}
-		Particle(Tuple<_Size> pos, double mass, double invMass, color colorVal = color()) :
-			pos(pos),
+		Particle(Tuple<_Size> pos, double mass, double invMass) :
+			pos(pos), vel(true), F(true),
 			mass(mass),
-			invMass(invMass),
-			colorVal(colorVal)
+			invMass(invMass)
 		{}
-		Particle(Tuple<_Size> pos, Tuple<_Size> vel, double mass, color colorVal = color()) :
-			pos(pos), vel(vel),
+		Particle(Tuple<_Size> pos, Tuple<_Size> vel, double mass) :
+			pos(pos), vel(vel), F(true),
 			mass(mass),
-			invMass(mass > 0 ? 1. / mass : 0.),
-			colorVal(colorVal)
+			invMass(mass > 0 ? 1. / mass : 0.)
 		{}
-		Particle(Tuple<_Size> pos, Tuple<_Size> vel, double mass, double invMass, color colorVal = color()) :
-			pos(pos), vel(vel),
+		Particle(Tuple<_Size> pos, Tuple<_Size> vel, double mass, double invMass)) :
+			pos(pos), vel(vel), F(true),
 			mass(mass),
-			invMass(invMass),
-			colorVal(color)
+			invMass(invMass)
 		{}
 		Particle(const Particle<_Size>& p) :
-			pos(p.pos), vel(p.vel),
-			mass(p.mass), invMass(p.invmass),
-			colorVal(p.colorVal)
+			pos(p.pos), vel(p.vel), F(true),
+			mass(p.mass), invMass(p.invmass)
 		{}
 		
 		// MEMBER FUNCTIONS
@@ -94,6 +88,10 @@ namespace PhysicsSimulator {
 		}
 	};
 
+	// Define a template typedef to refer to instances of Particle
+	template <std::uint8_t _Size>
+	using particle_ref = std::uint32_t;  // Used as a "pointer" to paricles, since they will be stored in a std::vector in the simulator
+
 	/*
 	Struct OutputParticle - same as "Particle," except only contains information required to display it.
 	*/
@@ -103,10 +101,10 @@ namespace PhysicsSimulator {
 		color colorVal;
 
 		OutputParticle(void) :
-			pos(true), colorVal(0, 0, 0)
+			pos(true)
 		{}
 		OutputParticle(const Particle<_Size>& p) :
-			pos(p.pos), colorVal(p.colorVal)
+			pos(p.pos)
 		{}
 	};
 }

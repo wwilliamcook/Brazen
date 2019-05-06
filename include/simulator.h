@@ -181,9 +181,16 @@ namespace PhysicsSimulator {
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::updateState(double seconds_per_cycle) {
 		// Do physics stuff
+		std::uint16_t i, j
 		// Run calculations for particle connections
-		for (Spring<_Size> s : this.springs) {
+		for (const Spring<_Size>& s : this.springs) {
 			s.update(this.particles);
+		}
+		// Resolve object collisions
+		for (i = 0; i < this.objects.size(); i++) {
+			for (j = i + 1; j < this.objects.size(); i++) {
+				resolveObjectCollision(this.particles, this.objects[i], this.objects[2]);
+			}
 		}
 		// Update the position and velocity of all particles
 		for (Particle<_Size>& p : this.particles) {

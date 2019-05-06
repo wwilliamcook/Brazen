@@ -10,6 +10,7 @@
 #include <stdexcept>  // std::out_of_range
 #include <string>  // std::to_string
 #include <random> // std:: default_random_engine, std::uniform_real_distribution
+#include <stdlib.h>
 #include <iostream>
 
 
@@ -21,6 +22,8 @@ Features:
 -Vector addition/subtraction
 -Return vector magnitude
 -Return parallel unit vector
+-Dot product
+-Cross product (N-dimensional generalization)
 -Return scalar projection of two vectors
 -Return vector projection of two vectors
 
@@ -377,7 +380,7 @@ Tuple<_Size> random_unit(void) {  // Return a randomly oriented unit vector from
 
 	// Convert the spherical coordinates to Euclidean coordinates
 	//	(there has to be a more computationally efficient way
-	//   to do this, but I'm too lazy to find it just yet)
+	//   to do this, but I haven't found it just yet)
 	for (std::uint8_t i = 0; i < _Size - 1; i++) {
 		out.value[i] *= std::cos(angles[i]);
 
@@ -389,7 +392,6 @@ Tuple<_Size> random_unit(void) {  // Return a randomly oriented unit vector from
 }
 template <>
 Tuple<1> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit 1-sphere.
-	static std::uniform_real_distribution<double> distribution(-1, 1);
 	double direction = random_angle() - 3.14159265358979323846;  // Uniformly distributed on [-pi, pi)
 
 	return Tuple<1>(direction / std::abs(direction));

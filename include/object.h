@@ -7,6 +7,7 @@
 
 #include "tuple.h"
 #include "particle.h"
+#include "surface.h"
 #include "spring.h"
 #include <vector>
 #include <iostream>
@@ -19,66 +20,128 @@ namespace PhysicsSimulator {
 	template <std::uint8_t _Size>
 	class Object {
 	private:
-		std::vector<std::uint32_t> particle_indices;
+		double massSum;
+		double invMassSum;
 	public:
+		std::vector<particle_ref<_Size> > particle_refs;
+		std::vector<Surface<_Size> > surfaces;
+
 		Object(void) {}
 		// Instantiate the object with the given collection of particles with a connection of the given type between each pair.
-		Object(std::vector<std::uint32_t> particle_indices, const Spring<_Size>& spring) :
-			particle_indices(particle_indices)
-		{
+		Object(const std::vector<particle_ref<_Size> >& particle_refs,
+			const std::vector<Surface<_Size> >& surfaces,
+			const Spring<_Size>& spring) :
+			particle_refs(particle_refs), surfaces(surfaces)
+		{}
+
+		// Compute the total mass and total inverse mass of the object
+		void computeMass(const std::vector<Particle<_Size> >& particles) {
+			massSum = invMassSum = 0;
+
+			for (const Particle<_Size>& p : particle_refs) {
+				massSum += particles[p].mass;
+				invMassSum += particles[p].invMass;
+			}
+		}
+
+		// Return the sum of masses
+		double mass(void) const {
+			return massSum;
+		}
+
+		// Return the sum of inverse masses
+		double invMass(void) const {
+			return invMassSum;
 		}
 
 		// Return the center of mass.
-		Tuple<_Size> centerOfMass(void) {
+		Tuple<_Size> centerOfMass(const std::vector<Particle<_Size> >& particles) {
 			Tuple<_Size> out(true);
-			double total_mass = 0.;
 
-			for (Particle<_Size> p : particles) {
-				out += p.mass * p.pos;
-				total_mass += p.mass;
-			}
+			for (Particle<_Size> p : particles)
+				out += particles[p].mass * particles[p].pos;
 
-			return out / total_mass;
+			return out * invMassSum;
 		}
 
 		friend class Simulator;
 	};
 
+	// Return whether the two objects are intersecting and, if so, find the axis of maximum separation.
+	template <std::uint8_t _Size>
+	bool detectObjectCollision(const std::vector<Particle<_Size> >& particles, const Object<_Size>& obj1, const Object<_Size>& obj2,
+		Tuple<_Size>& axisOfMinimumIntersection, double& intersection) {
+		Tuple<_Size> axis, minaxis;
+		double tempintersection;
+		double minproj1, maxproj1,
+			minproj2, maxproj2;
+		double tempproj;
+		double diff1, diff2;
+
+		intersection = -1;
+		for (const Object<_Size>& axis_src_obj : { obj1, obj2 }) {
+			// Iterate the faces to find the axis of maximum separation
+			for (const Surface<_Size>& surface : axis_src_obj.surfaces) {
+				axis = unit(surface.getNormal(particles));
+
+				// Find the projection of object 1 onto the axis
+				minproj1 = maxproj1 = projection_scalar(particles[obj1.particle_refs[0]].pos, axis);
+				for (const particle_ref<_Size>& vertex : obj1.particle_refs) {
+					tempproj = projection_scalar(particles[vertex].pos, axis);
+
+					minproj1 = fmin(minproj1, tempproj);
+					maxproj1 = fmax(maxproj1, tempproj);
+				}
+
+				// Find the projection of object2 onto the axis
+				minproj2 = maxproj2 = projection_scalar(particles[obj2.particle_refs[0]].pos, axis);
+				for (const particle_ref<_Size>& vertex : obj2.particle_refs) {
+					tempproj = projection_scalar(particles[vertex.pos, axis]);
+
+					minproj2 = fmin(minproj2, tempproj);
+					maxproj2 = fmax(maxproj2, tempproj);
+				}
+
+				// Determine whether the objects are intersecting
+				diff1 = maxproj1 - minproj2;
+				diff2 = maxproj2 - minproj2;
+				if (diff1 < 0 || diff2 < 0) return false;  // Not intersecting
+
+				// Objects are intersecting, so determine the amount of intersection.
+				// Intersection is positive if obj1 < obj2, otherwise negative
+				tempintersection = (diff1 < diff2) ? diff1 : -diff2;
+
+				if (tempintersection < intersection || intersection < 0) {
+					intersection = tempintersection;
+					minaxis = axis;
+				}
+			}
+		}
+
+		return true;  // No separating axis found, so objects must be either touching or intersecting.
+	}
+
 	// Detect and resolve collisions between the given objects. Only works for convex shapes.
 	template <std::uint8_t _Size>
-	void resolveObjectCollision(Object<_Size>& object1, Object<_Size>& object2) {
-		Tuple<_Size> object1COM = object1.centerOfMass(),
-			object2COM = object2.centerOfMass();
-		Tuple<_Size> axis1to2 = object2COM - object1COM;
-		double distance = magnitude(axis1to2);
-		axis1to2 /= distance;
-		Particle<_Size>* closest_from_object1,  // Farthest particle from object1 when projected onto axis1to2
-			*closest_from_object2;  // Farthest particle from object2 when projected onto axis1to2
-		double max_projection1 = 0.,
-			min_projection2 = 0.;
-		double curr_projection;
-		bool colliding;
+	void resolveObjectCollision(const std::vector<Particle<_Size> >& particles, const Object<_Size>& obj1, const Object<_Size>& obj2) {
+		Tuple<_Size> axis;
+		double intersection;
+		Tuple<_Size> displacement1, displacement2;
+		double displacement_ratio;
 
-		// Find the farthest projected particle from object1
-		for (Particle<_Size>* p : object1.particles) {
-			curr_projection = projection_scalar(p.pos - object1COM, axis1to2);
-			if (curr_projection > max_projection1) {
-				max_projection1 = curr_projection;
-				closest_from_object1 = p;
+		if (detectObjectCollision(particles, obj1, obj2, axis, intersection)) {
+			if (intersection != 0) {
+				displacement_ratio = obj1.invMass() / (obj1.invMass() + obj2.invMass());
+				displacement1 = axis * (displacement);
+				displacement2 = axis * (displacement);
+
+				for (const particle_ref<_Size>& p : obj1.particle_refs)
+					particles[p].m_delta_pos -= displacement1;
+
+				for (const particle_ref<_Size>& p : obj2.particle_refs)
+					particles[p].m_delta_pos += displacement1;
 			}
 		}
-
-		// Find the farthest projected particle from object2
-		for (Particle<_Size>* p : object2.particles) {
-			curr_projection = projection_scalar(p.pos - object2COM, axis1to2);
-			if (curr_projection < max_projection2) {
-				max_projection2 = curr_projection;
-				closest_from_object2 = p;
-			}
-		}
-
-		// Determine whether the two shapes are intersecting
-		colliding = max_projection1 >= distance + min_projection2;
 	}
 }
 
