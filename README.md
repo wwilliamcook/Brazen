@@ -4,7 +4,7 @@ Brazen is an N-dimensional physics engine designed for modularity and extensibil
 
 ## Getting Started
 
-For a quick demonstration of Brazen's capabilities and how to use it within a program, see the applications in [/examples/](/examples/).
+For a quick demonstration of Brazen's capabilities and how to use it within a program, see the applications in [`examples`](/examples/).
 
 ### Prerequisites
 
@@ -20,7 +20,7 @@ Brazen's core physics engine has no additional dependencies and can be used as-i
 
 As Brazen is a header-only C++ library, all that is required for installation is inclusion into your build directory paths.
 
-Here is an example of building [/examples/bouncy_cube.cpp](/examples/bouncy_cube.cpp) using g++:
+Here is an example of building [`examples/bouncy_cube.cpp`](examples/bouncy_cube.cpp) using `g++`:
 
 ```
 g++ -Iinclude examples/bouncy_cube.cpp
@@ -28,7 +28,7 @@ g++ -Iinclude examples/bouncy_cube.cpp
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests to us.
 
 ## Authors
 
@@ -38,4 +38,4 @@ See also the list of [contributors](https://github.com/wwilliamcook/Brazen/contr
 
 ## License
 
-This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE](LICENSE) file for details
+This project is licensed under the Mozilla Public License 2.0 - see the [`LICENSE`](LICENSE) file for details.
