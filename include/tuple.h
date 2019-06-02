@@ -1,9 +1,21 @@
-// Tuple.h
-// Written by Weston Cook
-// Defines the template struct Tuple along with related helper functions
+/*
+//
+// tuple.h
+//
+// Author: Weston Cook
+//
+// Distributed under the Mozilla Public Lincence 2.0
+//
+// Description:
+//	Defines the template struct Tuple, which encapsulates N-dimensional mathematical tuple data.
+//	Also defines helper functions for performing vector arithmetic on Tuples, as well as some
+//		other basic vector ops.
+//
+*/
 
-#ifndef PARTICLE_SIMULATOR_TUPLE_H
-#define PARTICLE_SIMULATOR_TUPLE_H
+
+#ifndef BRAZEN_TUPLE_H
+#define BRAZEN_TUPLE_H
 
 #include <cmath>  // std::sqrt, std::sin, std::cos
 #include <array>  // std::array
@@ -15,20 +27,23 @@
 
 
 /*
-Struct Tuple, which represents an N-Tuple and has several operations defined on it.
-
-Features:
--Scalar multiplication
--Vector addition/subtraction
--Return vector magnitude
--Return parallel unit vector
--Dot product
--Cross product (N-dimensional generalization)
--Return scalar projection of two vectors
--Return vector projection of two vectors
-
-NOTE: Explicit specializations are defined for _Size = 2, 3 for computational efficiency.
-WARNING: For efficiency, Tuple uses type std::uint8_t for its dimension, so dimensions greater than 255 are not allowed.
+//
+// Struct Tuple, which represents an N-Tuple and has several operations defined on it.
+//
+// Features:
+// -Scalar multiplication
+// -Vector addition/subtraction
+// -Return vector magnitude
+// -Return parallel unit vector
+// -Dot product
+// -Cross product (N-dimensional generalization)
+// -Return scalar projection of two vectors
+// -Return vector projection of two vectors
+//
+// NOTE: Explicit specializations are defined for _Size = 2, 3 for computational efficiency.
+// WARNING: For efficiency, Tuple uses type std::uint8_t for its dimension, so dimensions
+//	greater than 255 are not allowed.
+//
 */
 template <std::uint8_t _Size>
 struct Tuple {
@@ -39,20 +54,24 @@ struct Tuple {
 		if (zeros)
 			setZero();
 	}
+
 	// Initialize with the given values
 	template <typename... T>
 	Tuple(T... v) :
 		value({ v... })
 	{}
+
 	// Initialize with the given std::array of values
 	template <typename T>
 	Tuple(const std::array<T, _Size> v) :
 		value(v)
 	{}
+
 	// Initialize with the given Tuple
 	Tuple(const Tuple<_Size>& v) :
 		value(v.value)
 	{}
+
 
 	// Assign this tuple to have the same value as the argument std::array
 	template <typename T>
@@ -60,11 +79,13 @@ struct Tuple {
 		for (std::uint8_t i = 0; i < _Size; i++)
 			value[i] = v[i];
 	}
+
 	// Assign this tuple to have the same value as the argument tuple
 	const Tuple<_Size>& operator=(const Tuple<_Size>& v) {
 		for (std::uint8_t i = 0; i < _Size; i++)
 			value[i] = v.value[i];
 	}
+
 
 	// Index the components - mutable
 	double& operator[](std::uint8_t i) {
@@ -72,12 +93,14 @@ struct Tuple {
 			return value[i];
 		throw std::out_of_range("Index " + std::to_string(i) + " out of range for " + std::to_string(_Size) + "-Tuple.");
 	}
+
 	// Index the components - immutable
 	double operator[](std::uint8_t i) const {
 		if (i < _Size)
 			return value[i];
 		throw std::out_of_range("Index " + std::to_string(i) + " out of range for " + std::to_string(_Size) + "-Tuple.");
 	}
+
 
 	// Set all components to zero
 	void setZero(void) {
@@ -86,8 +109,11 @@ struct Tuple {
 	}
 };
 
+
 /*
-Explicit specialization of struct "Tuple" for 2-tuples.
+//
+// Explicit specialization of struct "Tuple" for 2-tuples.
+//
 */
 template <>
 struct Tuple<2> {
@@ -99,31 +125,37 @@ struct Tuple<2> {
 		if (zeros)
 			setZero();
 	}
+
 	// Initialize with the given values
 	template <typename T>
 	Tuple(T x, T y) :
 		x(x), y(y)
 	{}
+
 	// Initialize with the given std::array of values
 	template <typename T>
 	Tuple(const std::array<T, 2> v) :
 		x(v[0]), y(v[1])
 	{}
+
 	// Initialize with the given tuple
 	Tuple(const Tuple<2>& v) :
 		x(v.x), y(v.y)
 	{}
+
 
 	// Assign this tuple to have the same value as the argument std::array
 	const Tuple<2>& operator=(const std::array<double, 2>& v) {
 		x = v[0];
 		y = v[1];
 	}
+
 	// Assign this tuple to have the same value as the argument tuple
 	const Tuple<2>& operator=(const Tuple<2>& v) {
 		x = v.x;
 		y = v.y;
 	}
+
 
 	// Index the components - mutable
 	double& operator[](std::uint8_t i) {
@@ -136,6 +168,7 @@ struct Tuple<2> {
 			throw std::out_of_range("Index " + std::to_string(i) + " out of range for 2-Tuple.");
 		}
 	}
+
 	// Index the components - immutable
 	double operator[](std::uint8_t i) const {
 		switch (i) {
@@ -148,6 +181,7 @@ struct Tuple<2> {
 		}
 	}
 
+
 	// Set all elements to zero
 	void setZero(void) {
 		x = 0.;
@@ -155,8 +189,11 @@ struct Tuple<2> {
 	}
 };
 
+
 /*
-Explicit specialization of struct "Tuple" for 3-tuples.
+//
+// Explicit specialization of struct "Tuple" for 3-tuples.
+//
 */
 template <>
 struct Tuple<3> {
@@ -169,20 +206,24 @@ struct Tuple<3> {
 		if (zeros)
 			setZero();
 	}
+
 	// Initialize with the given values
 	template <typename T>
 	Tuple(T x, T y, T z) :
 		x(x), y(y), z(z)
 	{}
+
 	// Initialize with the given std::array of values
 	template <typename T>
 	Tuple(const std::array<T, 3> v) :
 		x(v[0]), y(v[1]), z(v[2])
 	{}
+
 	// Initialize with the given tuple
 	Tuple(const Tuple<3>& v) :
 		x(v.x), y(v.y), z(v.z)
 	{}
+
 
 	// Assign this tuple to have the same value as the argument std::array
 	const Tuple<3>& operator=(const std::array<double, 3>& v) {
@@ -190,12 +231,14 @@ struct Tuple<3> {
 		y = v[1];
 		z = v[2];
 	}
+
 	// Assign this tuple to have the same value as the argument tuple
 	const Tuple<3>& operator=(const Tuple<3>& v) {
 		x = v.x;
 		y = v.y;
 		z = v.z;
 	}
+
 
 	// Index the components - mutable
 	double& operator[](std::uint8_t i) {
@@ -210,6 +253,7 @@ struct Tuple<3> {
 			throw std::out_of_range("Index " + std::to_string(i) + " out of range for 3-Tuple.");
 		}
 	}
+
 	// Index the components - immutable
 	double operator[](std::uint8_t i) const {
 		switch (i) {
@@ -224,6 +268,7 @@ struct Tuple<3> {
 		}
 	}
 
+
 	// Set all elements to zero
 	void setZero(void) {
 		x = 0.;
@@ -231,6 +276,7 @@ struct Tuple<3> {
 		z = 0.;
 	}
 };
+
 
 /*************TUPLE HELPER FUNCTIONS***********/
 /*************NOT IN PLACE************/
@@ -245,12 +291,16 @@ Tuple<_Size> operator*(const Tuple<_Size>& v, double s) {
 
 	return out;
 }
+
 inline Tuple<2> operator*(const Tuple<2>& v, double s) {
 	return Tuple<2>(v.x * s, v.y * s);
 }
+
 inline Tuple<3> operator*(const Tuple<3>& v, double s) {
 	return Tuple<3>(v.x * s, v.y * s, v.z * s);
 }
+
+
 // vector, scalar
 template <std::uint8_t _Size>
 Tuple<_Size> operator*(double s, const Tuple<_Size>& v) {
@@ -261,12 +311,16 @@ Tuple<_Size> operator*(double s, const Tuple<_Size>& v) {
 
 	return out;
 }
+
 inline Tuple<2> operator*(double s, const Tuple<2>& v) {
 	return Tuple<2>(v.x * s, v.y * s);
 }
+
 inline Tuple<3> operator*(double s, const Tuple<3>& v) {
 	return Tuple<3>(v.x * s, v.y * s, v.z * s);
 }
+
+
 // SCALAR VECTOR DIVISION
 template <std::uint8_t _Size>
 Tuple<_Size> operator/(const Tuple<_Size>& v, double s) {
@@ -277,12 +331,16 @@ Tuple<_Size> operator/(const Tuple<_Size>& v, double s) {
 
 	return out;
 }
+
 inline Tuple<2> operator/(const Tuple<2>& v, double s) {
 	return Tuple<2>(v.x / s, v.y / s);
 }
+
 inline Tuple<3> operator/(const Tuple<3>& v, double s) {
 	return Tuple<3>(v.x / s, v.y / s, v.z / s);
 }
+
+
 // VECTOR ADDITION
 template <std::uint8_t _Size>
 Tuple<_Size> operator+(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
@@ -293,12 +351,16 @@ Tuple<_Size> operator+(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 
 	return out;
 }
+
 inline Tuple<2> operator+(const Tuple<2>& v1, const Tuple<2>& v2) {
 	return Tuple<2>(v1.x + v2.x, v1.y + v2.y);
 }
+
 inline Tuple<3> operator+(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return Tuple<3>(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
 }
+
+
 // VECTOR SUBTRACTION
 template <std::uint8_t _Size>
 Tuple<_Size> operator-(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
@@ -309,12 +371,16 @@ Tuple<_Size> operator-(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 
 	return out;
 }
+
 inline Tuple<2> operator-(const Tuple<2>& v1, const Tuple<2>& v2) {
 	return Tuple<2>(v1.x - v2.x, v1.y - v2.y);
 }
+
 inline Tuple<3> operator-(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return Tuple<3>(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
 }
+
+
 // DOT PRODUCT
 template <std::uint8_t _Size>
 double dot(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
@@ -331,10 +397,14 @@ inline double dot(const Tuple<2>& v1, const Tuple<2>& v2) {
 inline double dot(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
+
+
 // CROSS PRODUCT
 inline Tuple<3> cross(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return Tuple<3>(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
 }
+
+
 // MAGNITUDE
 template <std::uint8_t _Size>
 double magnitudeSquared(const Tuple<_Size>& v) {
@@ -345,19 +415,25 @@ double magnitudeSquared(const Tuple<_Size>& v) {
 
 	return sum;
 }
+
 inline double magnitudeSquared(const Tuple<2>& v) {
 	return v.x * v.x + v.y * v.y;
 }
+
 inline double magnitudeSquared(const Tuple<3>& v) {
 	return v.x * v.x + v.y * v.y + v.z * v.z;
 }
+
 template <std::uint8_t _Size>
 inline double magnitude(const Tuple<_Size>& v) {
 	return sqrt(magnitudeSquared(v));
 }
+
 inline double magnitude(const Tuple<1>& v) {
 	return std::abs(v.value[0]);
 }
+
+
 // RANDOMLY ORIENTED TUPLE
 double random_angle(void) {  // Helper function containing static objects used for generating random doubles
 	static std::random_device dev;
@@ -366,6 +442,7 @@ double random_angle(void) {  // Helper function containing static objects used f
 
 	return distribution(generator);
 };
+
 template <std::uint8_t _Size>
 Tuple<_Size> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit N-sphere.
 	std::array<double, _Size - 1> angles;  // Array containing the generalized spherical coordinates of the vector (without radius)
@@ -390,18 +467,21 @@ Tuple<_Size> random_unit(void) {  // Return a randomly oriented unit vector from
 
 	return out;
 }
+
 template <>
 Tuple<1> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit 1-sphere.
 	double direction = random_angle() - 3.14159265358979323846;  // Uniformly distributed on [-pi, pi)
 
 	return Tuple<1>(direction / std::abs(direction));
 }
+
 template <>
 Tuple<2> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit 2-sphere.
 	double theta = random_angle();
 
 	return Tuple<2>(std::cos(theta), std::sin(theta));
 }
+
 template <>
 Tuple<3> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit 3-sphere.
 	double theta = random_angle();
@@ -409,6 +489,8 @@ Tuple<3> random_unit(void) {  // Return a randomly oriented unit vector from a d
 
 	return Tuple<3>(std::sin(phi)*std::cos(theta), std::sin(phi)*std::sin(theta), std::cos(phi));
 }
+
+
 // UNIT
 template <std::uint8_t _Size>
 Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
@@ -428,12 +510,15 @@ Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
 		exit(EXIT_FAILURE);
 	}
 }
+
+
 // VECTOR PROJECTION
 // Scalar projection of v1 onto v2.
 template <std::uint8_t _Size>
 double projection_scalar(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	return dot(v1, v2) / magnitude(v2);
 }
+
 // Vector projection of v1 onto v2.
 template <std::uint8_t _Size>
 Tuple<_Size> projection_vector(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
@@ -450,12 +535,14 @@ Tuple<_Size>& operator*=(Tuple<_Size>& v, double s) {
 
 	return v;
 }
+
 Tuple<2>& operator*=(Tuple<2>& v, double s) {
 	v.x *= s;
 	v.y *= s;
 
 	return v;
 }
+
 Tuple<3>& operator*=(Tuple<3>& v, double s) {
 	v.x *= s;
 	v.y *= s;
@@ -463,6 +550,8 @@ Tuple<3>& operator*=(Tuple<3>& v, double s) {
 
 	return v;
 }
+
+
 // SCALAR VECTOR DIVISION
 template <std::uint8_t _Size>
 Tuple<_Size>& operator/=(Tuple<_Size>& v, double s) {
@@ -471,12 +560,14 @@ Tuple<_Size>& operator/=(Tuple<_Size>& v, double s) {
 
 	return v;
 }
+
 Tuple<2>& operator/=(Tuple<2>& v, double s) {
 	v.x /= s;
 	v.y /= s;
 
 	return v;
 }
+
 Tuple<3>& operator/=(Tuple<3>& v, double s) {
 	v.x /= s;
 	v.y /= s;
@@ -484,6 +575,8 @@ Tuple<3>& operator/=(Tuple<3>& v, double s) {
 
 	return v;
 }
+
+
 // VECTOR ADDITION
 template <std::uint8_t _Size>
 Tuple<_Size> operator+=(Tuple<_Size>& v1, const Tuple<_Size>& v2) {
@@ -492,12 +585,14 @@ Tuple<_Size> operator+=(Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 
 	return v1;
 }
+
 Tuple<2> operator+=(Tuple<2>& v1, const Tuple<2>& v2) {
 	v1.x += v2.x;
 	v1.y += v2.y;
 
 	return v1;
 }
+
 Tuple<3> operator+=(Tuple<3>& v1, const Tuple<3>& v2) {
 	v1.x += v2.x;
 	v1.y += v2.y;
@@ -505,6 +600,8 @@ Tuple<3> operator+=(Tuple<3>& v1, const Tuple<3>& v2) {
 
 	return v1;
 }
+
+
 // VECTOR SUBTRACTION
 template <std::uint8_t _Size>
 Tuple<_Size> operator-=(Tuple<_Size>& v1, const Tuple<_Size>& v2) {
@@ -513,12 +610,14 @@ Tuple<_Size> operator-=(Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 
 	return v1;
 }
+
 Tuple<2> operator-=(Tuple<2>& v1, const Tuple<2>& v2) {
 	v1.x -= v2.x;
 	v1.y -= v2.y;
 
 	return v1;
 }
+
 Tuple<3> operator-=(Tuple<3>& v1, const Tuple<3>& v2) {
 	v1.x -= v2.x;
 	v1.y -= v2.y;
@@ -526,6 +625,8 @@ Tuple<3> operator-=(Tuple<3>& v1, const Tuple<3>& v2) {
 
 	return v1;
 }
+
+
 // STREAM INSERTION
 template <std::uint8_t _Size>
 std::ostream& operator<<(std::ostream &s, const Tuple<_Size>& v) {
@@ -538,15 +639,18 @@ std::ostream& operator<<(std::ostream &s, const Tuple<_Size>& v) {
 
 	return s;
 }
+
 std::ostream& operator<<(std::ostream &s, const Tuple<2>& v) {
 	s << "< " << v.x << ", " << v.y << " >";
 
 	return s;
 }
+
 std::ostream& operator<<(std::ostream &s, const Tuple<3>& v) {
 	s << "< " << v.x << ", " << v.y << ", " << v.z << " >";
 
 	return s;
 }
+
 
 #endif
