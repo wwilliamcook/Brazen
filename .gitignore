@@ -26,3 +26,6 @@
 # Visual Studio (Code)
 /.vs
 .vscode
+
+# Microsoft Word
+*.docx
