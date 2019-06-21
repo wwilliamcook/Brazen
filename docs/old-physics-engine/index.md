@@ -26,7 +26,7 @@ Download and run any of the programs in the downloads section. Unfortunately, th
 `Mouse right click + scroll` - adjust the distance between virtual cameras if in stereoscopic mode <br>
 `Mouse left click` - make the display interactive if it is not already <br>
 
-## Downloads
+## Download
 
 Download the first two prerequisites and then try running any of the example programs. If there are any issues regarding the Visual Studio Redistributable, try running the third prerequisite. Alternatively, you can just download a [zip archive](old-physics-engine.zip) containing all the files.
 
