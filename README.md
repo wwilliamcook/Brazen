@@ -2,7 +2,7 @@
 
 Brazen is an N-dimensional physics engine designed for modularity and extensibility. It provides a foundation upon which to build a variety of physics-based applications, and comes with modules for virtual camera output, virtual sensor output, virtual actuator input, and rudimentary audio output. It offers protocols for multithreaded asynchronous physics updates for real-time applications as well as a call-for-update mode for high temporal-resolution applications.
 
-**NOTE: This project is still in its infancy and has no full releases yet. For a demonstration of its future capabilities, see the [Old Demos](docs/old-physics-engine).**
+**NOTE: This project is still in its infancy and has no full releases yet. For a demonstration of its future capabilities, see the [old demos](docs/old-physics-engine).**
 
 ## Getting Started
 
