@@ -12,31 +12,19 @@ Download and run any of the programs in the downloads section. Unfortunately, th
 
 #### Maneuvering the Virtual Camera
 
-`W` - move the camera in the direction it is facing
-
-`S` - move the camera in the reverse of the direction it is facing
-
-`A` - move the camera to the left along a vector that lies in the xy-plane and is orthogonal to the camera's direction
-
-`D` - move the camera to the right along the vector as described for 'A'
-
-`Left Shift` - move the camera downward along a vector that is orthogonal to both the camera's direction and the vector described for 'A'
-
-`Space` - move the camera upward along the vector described for 'Left Shift'
-
-`R` - reset the state of the camera(s)
-
-`Escape` - toggle display interactivity
-
-
-`Mouse drag` - rotates the camera about the vectors described for 'A' and 'Left Shift'
-
-`Mouse scroll` - adjusts the zoom of the camera ...sort of
-
-`Mouse right click + scroll` - adjust the distance between virtual cameras if in stereoscopic mode
-
-`Mouse left click` - make the display interactive if it is not already
-
+`W` - move the camera in the direction it is facing <br>
+`S` - move the camera in the reverse of the direction it is facing <br>
+`A` - move the camera to the left along a vector that lies in the xy-plane and is orthogonal to the camera's direction <br>
+`D` - move the camera to the right along the vector as described for 'A' <br>
+`Left Shift` - move the camera downward along a vector that is orthogonal to both the camera's direction and the vector described for 'A' <br>
+`Space` - move the camera upward along the vector described for 'Left Shift' <br>
+`R` - reset the state of the camera(s) <br>
+`Escape` - toggle display interactivity <br>
+ <br>
+`Mouse drag` - rotates the camera about the vectors described for 'A' and 'Left Shift' <br>
+`Mouse scroll` - adjusts the zoom of the camera ...sort of <br>
+`Mouse right click + scroll` - adjust the distance between virtual cameras if in stereoscopic mode <br>
+`Mouse left click` - make the display interactive if it is not already <br>
 
 ## Downloads
 
