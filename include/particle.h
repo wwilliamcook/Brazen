@@ -2,8 +2,8 @@
 // Written by Weston Cook
 // Defines the structs Particle and OutputParticle
 
-#ifndef PARTICLE_SIMULATOR_PARTICLE_H
-#define PARTICLE_SIMULATOR_PARTICLE_H
+#ifndef BRAZEN_PARTICLE_H
+#define BRAZEN_PARTICLE_H
 
 #include "tuple.h"
 #include <stdlib.h>  // std::uint8_t
@@ -19,7 +19,7 @@ struct color {
 	{}
 };
 
-namespace PhysicsSimulator {
+namespace Brazen {
 	/*
 	Struct Particle - represents a massive, infinitessimal particle in N-dimensional Euclidean space.
 	*/

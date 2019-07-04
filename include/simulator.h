@@ -2,8 +2,8 @@
 // Written by Weston Cook
 // Defines the class Simulator
 
-#ifndef PHYSICS_SIMULATOR_SIMULATOR_H
-#define PHYSICS_SIMULATOR_SIMULATOR_H
+#ifndef BRAZEN_SIMULATOR_H
+#define BRAZEN_SIMULATOR_H
 
 #include "tuple.h"
 #include "particle.h"
@@ -17,7 +17,7 @@
 #include <stdlib.h>  // std::uint32_t
 #include <algorithm>  // std::find
 
-namespace PhysicsSimulator {
+namespace Brazen {
 	typedef std::chrono::time_point<std::chrono::steady_clock> time_point;
 
 	/*
