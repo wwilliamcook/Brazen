@@ -32,6 +32,10 @@ g++ -Iinclude examples/bouncy_cube.cpp
 
 Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests to us.
 
+## References
+
+* [Director Structure for a C++ Project](https://mariuszbartosik.com/directory-structure-for-a-c-project/)
+
 ## Authors
 
 * **Weston Cook** - *Initial work* - [wwilliamcook](https://github.com/wwilliamcook)
