@@ -7,10 +7,18 @@
 *.o
 *.obj
 
+# Precompiled Headers
+*.gch
+*.pch
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
-#*.dll
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
 
 # Compiled Static libraries
 *.lai
@@ -19,13 +27,14 @@
 *.lib
 
 # Executables
-#*.exe
+*.exe
 *.out
 *.app
+
+# Compiled binaries and object files
+bin/
+obj/
 
 # Visual Studio (Code)
 /.vs
 .vscode
-
-# Microsoft Word
-*.docx
