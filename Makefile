@@ -2,9 +2,10 @@
 # Makefile for "Brazen" C++ application
 # Weston Cook
 #
-#	make [all]	Builds test and main application
+#	make [all]	Builds tests, main application, and examples
 #	make Brazen	Builds main application
 #	make tests	Builds tests
+#	make examples	Builds examples
 #	make clean	Removes all compiled binaries and object files
 #
 # References:
@@ -16,21 +17,27 @@ CC=g++
 CCFLAGS=-Iinclude -std=c++11 -g3 -Wall
 CPPS=src/*.cpp
 DEPS=include/* src/*
-DIR_GUARD=@mkdir -p $(@D)
 
 .PHONY: all
 all: tests $(PROG)
 
 $(PROG): $(DEPS)
-	$(DIR_GUARD)
+	@mkdir -p bin
 	$(CC) -o bin/$@ $(CPPS) $(CCFLAGS)
 
-test/%.cpp: $(DEPS)
-	$(DIR_GUARD)
-	$(CC) -o bin/$(basename $@) $@ $(CPPS) $(CCFLAGS)
+test/%: $(DEPS)
+	@mkdir -p bin/test
+	$(CC) -o bin/$(basename $@) $@.cpp $(CPPS) $(CCFLAGS)
 
 .PHONY: tests
-tests: test/*.cpp
+tests: $(basename $(wildcard test/*.cpp))
+
+example/%: $(DEPS)
+	@mkdir -p bin/example
+	$(CC) -o bin/$(basename $@) $@.cpp $(CPPS) $(CCFLAGS)
+
+.PHONY: examples
+examples: $(basename $(wildcard example/*.cpp))
 
 .PHONY: clean
 clean:
