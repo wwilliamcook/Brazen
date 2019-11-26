@@ -1,19 +1,29 @@
+# Weston Cook
+
+#--------------------------------------------------------------------------------
 # Makefile for "Brazen" C++ application
-# Created by Weston Cook
+#
+#	make Brazen	Builds main application
+#	make tests	Builds tests
+#	make		Builds tests and main application
+#	make clean	Removes all compiled binaries
+#--------------------------------------------------------------------------------
 
 PROG := Brazen
 CC := g++
-CPPFLAGS := -g -Wall -Iinclude
-CPPS := main.cpp
-TESTCPPS := tests/*.cpp
+CCFLAGS := -Iinclude -std=c++11 -g3 -Wall
+CPPS := src/*.cpp
+DEPS := include/* src/*
 
-$(PROG) : $(CPPS)
-	$(CC) $(CPPFLAGS) -o $(PROG) $(CPPS)
+$(PROG): $(DEPS)
+	$(CC) -o $@.out $(CPPS) $(CCFLAGS)
 
-.PHONY: tests $(TESTCPPS)
-tests: $(TESTCPPS)
-$(TESTCPPS):
-	$(CC) $(CPPFLAGS) -o $(basename $@) $@
+.PHONY: all
+all: tests $(PROG)
 
-clean :
-	rm -f $(PROG) $(basename $(wildcard $(TESTCPPS)))
+.PHONY: tests
+tests:
+
+.PHONY: clean
+clean:
+	rm -f $(PROG).out $(TESTDIR)/*.out
