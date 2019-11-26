@@ -15,6 +15,8 @@ CCFLAGS := -Iinclude -std=c++11 -g3 -Wall
 CPPS := src/*.cpp
 DEPS := include/* src/*
 
+TESTDIR := test
+
 $(PROG): $(DEPS)
 	$(CC) -o $@.out $(CPPS) $(CCFLAGS)
 
