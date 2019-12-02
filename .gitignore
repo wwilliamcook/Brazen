@@ -28,10 +28,14 @@
 # Executables
 *.out
 *.app
+*.exe
 
 # Compiled binaries and object files
 bin/
 obj/
+
+# Dependency libraries
+deps/
 
 # Visual Studio (Code)
 /.vs
