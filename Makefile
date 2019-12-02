@@ -15,7 +15,7 @@
 PROG=Brazen
 CC=g++
 CCFLAGS=-Iinclude -std=c++11 -g3 -Wall
-CPPS=src/*.cpp
+CPPS = $(wildcard src/link/*.cpp)
 DEPS=include/* src/*
 
 .PHONY: all
