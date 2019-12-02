@@ -80,12 +80,16 @@ struct Tuple {
 	const Tuple<_Size>& operator=(const std::array<T, _Size>& v) {
 		for (std::uint8_t i = 0; i < _Size; i++)
 			value[i] = v[i];
+		
+		return *this;
 	}
 
 	// Assign this tuple to have the same value as the argument tuple
 	const Tuple<_Size>& operator=(const Tuple<_Size>& v) {
 		for (std::uint8_t i = 0; i < _Size; i++)
 			value[i] = v.value[i];
+		
+		return *this;
 	}
 
 
@@ -150,12 +154,16 @@ struct Tuple<2> {
 	const Tuple<2>& operator=(const std::array<TUPLE_TYPE, 2>& v) {
 		x = v[0];
 		y = v[1];
+
+		return *this;
 	}
 
 	// Assign this tuple to have the same value as the argument tuple
 	const Tuple<2>& operator=(const Tuple<2>& v) {
 		x = v.x;
 		y = v.y;
+
+		return *this;
 	}
 
 
@@ -232,6 +240,8 @@ struct Tuple<3> {
 		x = v[0];
 		y = v[1];
 		z = v[2];
+
+		return *this;
 	}
 
 	// Assign this tuple to have the same value as the argument tuple
@@ -239,6 +249,8 @@ struct Tuple<3> {
 		x = v.x;
 		y = v.y;
 		z = v.z;
+
+		return *this;
 	}
 
 
