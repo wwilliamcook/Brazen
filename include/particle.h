@@ -47,7 +47,7 @@ namespace Brazen {
 			mass(mass),
 			invMass(mass > 0 ? 1. / mass : 0.)
 		{}
-		Particle(Tuple<_Size> pos, Tuple<_Size> vel, double mass, double invMass)) :
+		Particle(Tuple<_Size> pos, Tuple<_Size> vel, double mass, double invMass) :
 			pos(pos), vel(vel), F(true),
 			mass(mass),
 			invMass(invMass)
