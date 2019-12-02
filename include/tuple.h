@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <iostream>
 
+#define TUPLE_TYPE float
+
 
 /*
 //
@@ -47,7 +49,7 @@
 */
 template <std::uint8_t _Size>
 struct Tuple {
-	std::array<double, _Size> value;
+	std::array<TUPLE_TYPE, _Size> value;
 
 	// Initialize with all zeros if zeros is true
 	Tuple(bool zeros = true) {
@@ -88,14 +90,14 @@ struct Tuple {
 
 
 	// Index the components - mutable
-	double& operator[](std::uint8_t i) {
+	TUPLE_TYPE& operator[](std::uint8_t i) {
 		if (i < _Size)
 			return value[i];
 		throw std::out_of_range("Index " + std::to_string(i) + " out of range for " + std::to_string(_Size) + "-Tuple.");
 	}
 
 	// Index the components - immutable
-	double operator[](std::uint8_t i) const {
+	TUPLE_TYPE operator[](std::uint8_t i) const {
 		if (i < _Size)
 			return value[i];
 		throw std::out_of_range("Index " + std::to_string(i) + " out of range for " + std::to_string(_Size) + "-Tuple.");
@@ -117,8 +119,8 @@ struct Tuple {
 */
 template <>
 struct Tuple<2> {
-	double x;
-	double y;
+	TUPLE_TYPE x;
+	TUPLE_TYPE y;
 
 	// Initialize with all zeros if zeros is true
 	Tuple(bool zeros = true) {
@@ -145,7 +147,7 @@ struct Tuple<2> {
 
 
 	// Assign this tuple to have the same value as the argument std::array
-	const Tuple<2>& operator=(const std::array<double, 2>& v) {
+	const Tuple<2>& operator=(const std::array<TUPLE_TYPE, 2>& v) {
 		x = v[0];
 		y = v[1];
 	}
@@ -158,7 +160,7 @@ struct Tuple<2> {
 
 
 	// Index the components - mutable
-	double& operator[](std::uint8_t i) {
+	TUPLE_TYPE& operator[](std::uint8_t i) {
 		switch (i) {
 		case 0:
 			return x;
@@ -170,7 +172,7 @@ struct Tuple<2> {
 	}
 
 	// Index the components - immutable
-	double operator[](std::uint8_t i) const {
+	TUPLE_TYPE operator[](std::uint8_t i) const {
 		switch (i) {
 		case 0:
 			return x;
@@ -197,9 +199,9 @@ struct Tuple<2> {
 */
 template <>
 struct Tuple<3> {
-	double x;
-	double y;
-	double z;
+	TUPLE_TYPE x;
+	TUPLE_TYPE y;
+	TUPLE_TYPE z;
 
 	// Initialize with all zeros if zeros is true
 	Tuple(bool zeros = true) {
@@ -226,7 +228,7 @@ struct Tuple<3> {
 
 
 	// Assign this tuple to have the same value as the argument std::array
-	const Tuple<3>& operator=(const std::array<double, 3>& v) {
+	const Tuple<3>& operator=(const std::array<TUPLE_TYPE, 3>& v) {
 		x = v[0];
 		y = v[1];
 		z = v[2];
@@ -241,7 +243,7 @@ struct Tuple<3> {
 
 
 	// Index the components - mutable
-	double& operator[](std::uint8_t i) {
+	TUPLE_TYPE& operator[](std::uint8_t i) {
 		switch (i) {
 		case 0:
 			return x;
@@ -255,7 +257,7 @@ struct Tuple<3> {
 	}
 
 	// Index the components - immutable
-	double operator[](std::uint8_t i) const {
+	TUPLE_TYPE operator[](std::uint8_t i) const {
 		switch (i) {
 		case 0:
 			return x;
@@ -283,7 +285,7 @@ struct Tuple<3> {
 // SCALAR VECTOR MULTIPLICATION
 // vector, scalar
 template <std::uint8_t _Size>
-Tuple<_Size> operator*(const Tuple<_Size>& v, double s) {
+Tuple<_Size> operator*(const Tuple<_Size>& v, TUPLE_TYPE s) {
 	Tuple<_Size> out(false);
 
 	for (std::uint8_t i = 0; i < _Size; i++)
@@ -292,18 +294,18 @@ Tuple<_Size> operator*(const Tuple<_Size>& v, double s) {
 	return out;
 }
 
-inline Tuple<2> operator*(const Tuple<2>& v, double s) {
+inline Tuple<2> operator*(const Tuple<2>& v, TUPLE_TYPE s) {
 	return Tuple<2>(v.x * s, v.y * s);
 }
 
-inline Tuple<3> operator*(const Tuple<3>& v, double s) {
+inline Tuple<3> operator*(const Tuple<3>& v, TUPLE_TYPE s) {
 	return Tuple<3>(v.x * s, v.y * s, v.z * s);
 }
 
 
 // vector, scalar
 template <std::uint8_t _Size>
-Tuple<_Size> operator*(double s, const Tuple<_Size>& v) {
+Tuple<_Size> operator*(TUPLE_TYPE s, const Tuple<_Size>& v) {
 	Tuple<_Size> out(false);
 
 	for (std::uint8_t i = 0; i < _Size; i++)
@@ -312,18 +314,18 @@ Tuple<_Size> operator*(double s, const Tuple<_Size>& v) {
 	return out;
 }
 
-inline Tuple<2> operator*(double s, const Tuple<2>& v) {
+inline Tuple<2> operator*(TUPLE_TYPE s, const Tuple<2>& v) {
 	return Tuple<2>(v.x * s, v.y * s);
 }
 
-inline Tuple<3> operator*(double s, const Tuple<3>& v) {
+inline Tuple<3> operator*(TUPLE_TYPE s, const Tuple<3>& v) {
 	return Tuple<3>(v.x * s, v.y * s, v.z * s);
 }
 
 
 // SCALAR VECTOR DIVISION
 template <std::uint8_t _Size>
-Tuple<_Size> operator/(const Tuple<_Size>& v, double s) {
+Tuple<_Size> operator/(const Tuple<_Size>& v, TUPLE_TYPE s) {
 	Tuple<_Size> out(false);
 
 	for (std::uint8_t i = 0; i < _Size; i++)
@@ -332,11 +334,11 @@ Tuple<_Size> operator/(const Tuple<_Size>& v, double s) {
 	return out;
 }
 
-inline Tuple<2> operator/(const Tuple<2>& v, double s) {
+inline Tuple<2> operator/(const Tuple<2>& v, TUPLE_TYPE s) {
 	return Tuple<2>(v.x / s, v.y / s);
 }
 
-inline Tuple<3> operator/(const Tuple<3>& v, double s) {
+inline Tuple<3> operator/(const Tuple<3>& v, TUPLE_TYPE s) {
 	return Tuple<3>(v.x / s, v.y / s, v.z / s);
 }
 
@@ -383,18 +385,18 @@ inline Tuple<3> operator-(const Tuple<3>& v1, const Tuple<3>& v2) {
 
 // DOT PRODUCT
 template <std::uint8_t _Size>
-double dot(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
-	double sum = 0.;
+TUPLE_TYPE dot(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
+	TUPLE_TYPE sum = 0.;
 
 	for (std::uint8_t i = 0; i < _Size; i++)
 		sum += v1.value[i] * v2.value[i];
 
 	return sum;
 }
-inline double dot(const Tuple<2>& v1, const Tuple<2>& v2) {
+inline TUPLE_TYPE dot(const Tuple<2>& v1, const Tuple<2>& v2) {
 	return v1.x * v2.x + v1.y * v2.y;
 }
-inline double dot(const Tuple<3>& v1, const Tuple<3>& v2) {
+inline TUPLE_TYPE dot(const Tuple<3>& v1, const Tuple<3>& v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
@@ -407,8 +409,8 @@ inline Tuple<3> cross(const Tuple<3>& v1, const Tuple<3>& v2) {
 
 // MAGNITUDE
 template <std::uint8_t _Size>
-double magnitudeSquared(const Tuple<_Size>& v) {
-	double sum = 0.;
+TUPLE_TYPE magnitudeSquared(const Tuple<_Size>& v) {
+	TUPLE_TYPE sum = 0.;
 
 	for (std::uint8_t i = 0; i < _Size; i++)
 		sum += v.value[i] * v.value[i];
@@ -416,36 +418,36 @@ double magnitudeSquared(const Tuple<_Size>& v) {
 	return sum;
 }
 
-inline double magnitudeSquared(const Tuple<2>& v) {
+inline TUPLE_TYPE magnitudeSquared(const Tuple<2>& v) {
 	return v.x * v.x + v.y * v.y;
 }
 
-inline double magnitudeSquared(const Tuple<3>& v) {
+inline TUPLE_TYPE magnitudeSquared(const Tuple<3>& v) {
 	return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 
 template <std::uint8_t _Size>
-inline double magnitude(const Tuple<_Size>& v) {
+inline TUPLE_TYPE magnitude(const Tuple<_Size>& v) {
 	return sqrt(magnitudeSquared(v));
 }
 
-inline double magnitude(const Tuple<1>& v) {
+inline TUPLE_TYPE magnitude(const Tuple<1>& v) {
 	return std::abs(v.value[0]);
 }
 
 
 // RANDOMLY ORIENTED TUPLE
-double random_angle(void) {  // Helper function containing static objects used for generating random doubles
+TUPLE_TYPE random_angle(void) {  // Helper function containing static objects used for generating random doubles
 	static std::random_device dev;
 	static std::default_random_engine generator(dev());
-	static std::uniform_real_distribution<double> distribution(0, 6.28318530718);
+	static std::uniform_real_distribution<TUPLE_TYPE> distribution(0, 6.28318530718);
 
 	return distribution(generator);
 };
 
 template <std::uint8_t _Size>
 Tuple<_Size> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit N-sphere.
-	std::array<double, _Size - 1> angles;  // Array containing the generalized spherical coordinates of the vector (without radius)
+	std::array<TUPLE_TYPE, _Size - 1> angles;  // Array containing the generalized spherical coordinates of the vector (without radius)
 	Tuple<_Size> out(false);  // Output Tuple
 	out.value[0] = 1.;  // Begin setting all output values to 1
 
@@ -470,22 +472,22 @@ Tuple<_Size> random_unit(void) {  // Return a randomly oriented unit vector from
 
 template <>
 Tuple<1> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit 1-sphere.
-	double direction = random_angle() - 3.14159265358979323846;  // Uniformly distributed on [-pi, pi)
+	TUPLE_TYPE direction = random_angle() - 3.14159265358979323846;  // Uniformly distributed on [-pi, pi)
 
 	return Tuple<1>(direction / std::abs(direction));
 }
 
 template <>
 Tuple<2> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit 2-sphere.
-	double theta = random_angle();
+	TUPLE_TYPE theta = random_angle();
 
 	return Tuple<2>(std::cos(theta), std::sin(theta));
 }
 
 template <>
 Tuple<3> random_unit(void) {  // Return a randomly oriented unit vector from a distribution that is uniform across the surface of the unit 3-sphere.
-	double theta = random_angle();
-	double phi = random_angle();
+	TUPLE_TYPE theta = random_angle();
+	TUPLE_TYPE phi = random_angle();
 
 	return Tuple<3>(std::sin(phi)*std::cos(theta), std::sin(phi)*std::sin(theta), std::cos(phi));
 }
@@ -495,7 +497,7 @@ Tuple<3> random_unit(void) {  // Return a randomly oriented unit vector from a d
 template <std::uint8_t _Size>
 Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
 	// Compute the magnitude of the vector
-	double mag = magnitude(v);
+	TUPLE_TYPE mag = magnitude(v);
 
 	if (mag > 0.)  // Unit vector is defined
 		return v / mag;
@@ -515,7 +517,7 @@ Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
 // VECTOR PROJECTION
 // Scalar projection of v1 onto v2.
 template <std::uint8_t _Size>
-double projection_scalar(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
+TUPLE_TYPE projection_scalar(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 	return dot(v1, v2) / magnitude(v2);
 }
 
@@ -529,21 +531,21 @@ Tuple<_Size> projection_vector(const Tuple<_Size>& v1, const Tuple<_Size>& v2) {
 /***************IN PLACE OPERATIONS***************/
 // SCALAR VECTOR MULTIPLICATION
 template <std::uint8_t _Size>
-Tuple<_Size>& operator*=(Tuple<_Size>& v, double s) {
+Tuple<_Size>& operator*=(Tuple<_Size>& v, TUPLE_TYPE s) {
 	for (std::uint8_t i = 0; i < _Size; i++)
 		v.value[i] *= s;
 
 	return v;
 }
 
-Tuple<2>& operator*=(Tuple<2>& v, double s) {
+Tuple<2>& operator*=(Tuple<2>& v, TUPLE_TYPE s) {
 	v.x *= s;
 	v.y *= s;
 
 	return v;
 }
 
-Tuple<3>& operator*=(Tuple<3>& v, double s) {
+Tuple<3>& operator*=(Tuple<3>& v, TUPLE_TYPE s) {
 	v.x *= s;
 	v.y *= s;
 	v.z *= s;
@@ -554,21 +556,21 @@ Tuple<3>& operator*=(Tuple<3>& v, double s) {
 
 // SCALAR VECTOR DIVISION
 template <std::uint8_t _Size>
-Tuple<_Size>& operator/=(Tuple<_Size>& v, double s) {
+Tuple<_Size>& operator/=(Tuple<_Size>& v, TUPLE_TYPE s) {
 	for (std::uint8_t i = 0; i < _Size; i++)
 		v.value[i] /= s;
 
 	return v;
 }
 
-Tuple<2>& operator/=(Tuple<2>& v, double s) {
+Tuple<2>& operator/=(Tuple<2>& v, TUPLE_TYPE s) {
 	v.x /= s;
 	v.y /= s;
 
 	return v;
 }
 
-Tuple<3>& operator/=(Tuple<3>& v, double s) {
+Tuple<3>& operator/=(Tuple<3>& v, TUPLE_TYPE s) {
 	v.x /= s;
 	v.y /= s;
 	v.z /= s;
