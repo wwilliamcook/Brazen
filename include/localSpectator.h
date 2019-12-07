@@ -1,14 +1,21 @@
-// localSpectator.h
-// Author: Weston Cook
-// Defines the class LocalSpectator, which creates an interactive
-//	window using SDL which displays the output of a nonexistent camera
-//	in the simulated environment and whose position and orientation
-//	can be locally controlled.
+/*
+ * localSpectator.h
+ * 
+ * Author: Weston Cook
+ * 
+ * Distributed under the Mozilla Public Lincence 2.0
+ * 
+ * Defines the class LocalSpectator, which creates an interactive
+ *	window using SDL which displays the output of a nonexistent camera
+ *	in the simulated environment and whose position and orientation
+ *	can be locally controlled.
+ *
+ * TODO: finish videoRendererBase.h; then rewrite the existing
+ *	mess of code in this file to use a "VideoRendererBase" class
+ *	to render the frames; then make SDL display them; then
+ *	figure out user controls.
+ */
 
-// TODO: finish videoRendererBase.h; then rewrite the existing
-//	mess of code in this file to use a "VideoRendererBase" class
-//	to render the frames; then make SDL display them; then
-//	figure out user controls.
 
 #include "tuple.h"
 #include "simulator.h"
@@ -25,7 +32,12 @@
 #define MOVEMENT_RATE 0.5//meters per second
 #define ROTATION_RATE 0.004
 
+
 namespace PhysicsSimulator {
+	/*
+	 * Class: Camera
+	 * -------------
+	 */
 	template <class dtype>
 	class Camera {
 	private:
@@ -135,6 +147,10 @@ namespace PhysicsSimulator {
 		};
 	}
 
+	/*
+	 * Class: VideoOutput
+	 * ------------------
+	 */
 	template <class dtype>
 	class VideoOutput {
 	private:
