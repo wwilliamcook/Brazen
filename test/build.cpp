@@ -1,5 +1,5 @@
 /*
- * build_test.cpp
+ * build.cpp
  * 
  * Tests whether a program can compile after including the files in include/.
  */

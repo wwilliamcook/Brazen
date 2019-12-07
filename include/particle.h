@@ -54,7 +54,7 @@ namespace Brazen {
 		{}
 		Particle(const Particle<_Size>& p) :
 			pos(p.pos), vel(p.vel), F(true),
-			mass(p.mass), invMass(p.invmass)
+			mass(p.mass), invMass(p.invMass)
 		{}
 		
 		// MEMBER FUNCTIONS
@@ -101,11 +101,16 @@ namespace Brazen {
 		color colorVal;
 
 		OutputParticle(void) :
-			pos(true)
-		{}
-		OutputParticle(const Particle<_Size>& p) :
-			pos(p.pos)
-		{}
+			pos(true) {}
+		
+		/*
+		 * Function: clone
+		 * ---------------
+		 * Creates an output version of the given particle.
+		 */
+		void clone(const Particle<_Size>& p) {
+			pos = p.pos;
+		}
 	};
 }
 
