@@ -114,10 +114,6 @@ namespace Brazen {
 		}
 	};
 
-	// Define a template typedef to refer to instances of Particle
-	template <std::uint8_t _Size>
-	using particle_ref = std::uint32_t;  // Used as a "pointer" to paricles, since they will be stored in a std::vector in the simulator
-
 	/*
 	 * Struct: OutputParticle
 	 * ----------------------

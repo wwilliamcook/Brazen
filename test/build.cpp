@@ -6,6 +6,7 @@
 
 #include "../include/tuple.h"
 #include "../include/particle.h"
+#include "../include/spring.h"
 #include "../include/simulator.h"
 
 using namespace Brazen;

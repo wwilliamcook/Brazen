@@ -21,6 +21,7 @@
 
 #include "tuple.h"
 #include "particle.h"
+#include "spring.h"
 
 #include <vector>  // std::vector
 #include <chrono>
@@ -44,7 +45,8 @@ namespace Brazen {
 	class Simulator {
 	private:
 		/**************************** ATTRIBUTES *****************************/
-		std::vector<Particle<_Size>*> particles;  // Stores all the particles
+		std::vector<Particle<_Size>*> particles;  // Stores all the Particles
+		std::vector<Spring<_Size> > springs;      // Stores all the Springs
 
 		// Vectors containing the output data. Basically, the output generator
 		// juggles the write_output and latest_output pointers and
@@ -85,6 +87,13 @@ namespace Brazen {
 		/************************* ACCESS FUNCTIONS **************************/
 
 		/*
+		 * Function: size
+		 * --------------
+		 * Returns the number of particles.
+		 */
+		std::uint16_t size(void) const;
+
+		/*
 		 * Function: getOutput
 		 * -------------------
 		 * Returns a reference to the latest std::vector<OutputParticle>.
@@ -99,6 +108,18 @@ namespace Brazen {
 		 * Copies the given Particle into the simulation environment.
 		 */
 		void addParticle(const Particle<_Size>&);
+
+		/*
+		 * Function: addSpring
+		 * -------------------
+		 * Adds the given Spring to the simulation environment.
+		 * 
+		 * Args:
+		 *   p1: index of first Particle
+		 *   p2: index of second Particle
+		 *   s: existing Spring instance to copy
+		 */
+		void addSpring(std::uint16_t, std::uint16_t, const Spring<_Size>&);
 
 		/*
 		 * Function: start
@@ -164,6 +185,16 @@ namespace Brazen {
 	/************************* ACCESS FUNCTIONS **************************/
 
 	/*
+	 * Function: size
+	 * --------------
+	 * Returns the number of particles.
+	 */
+	template <std::uint8_t _Size>
+	std::uint16_t Simulator<_Size>::size(void) const {
+		return particles.size();
+	}
+
+	/*
 	 * Function: getOutput
 	 * -------------------
 	 * Returns a reference to the latest std::vector<OutputParticle>.
@@ -192,6 +223,22 @@ namespace Brazen {
 		write_output->push_back(OutputParticle<_Size>());
 		latest_output->push_back(OutputParticle<_Size>());
 		read_output->push_back(OutputParticle<_Size>());
+	}
+
+	/*
+	 * Function: addSpring
+	 * -------------------
+	 * Adds the given Spring to the simulation environment.
+	 * 
+	 * Args:
+	 *   p1: index of first Particle
+	 *   p2: index of second Particle
+	 *   s: existing Spring instance to copy
+	 */
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::addSpring(std::uint16_t p1, std::uint16_t p2, const Spring<_Size>& s) {
+		springs.push_back(Spring<_Size>(s));
+		springs.at(springs.size() - 1).setEndpoints(particles.at(p1), particles.at(p2));
 	}
 
 	/*
@@ -256,7 +303,7 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::updateState(double seconds_per_cycle) {
-		std::uint16_t i, j;
+		std::uint16_t i;
 
 		if (running) {
 			std::cerr << "Error: cannot call updateState(...) on running Simulator instance." << std::endl;
@@ -267,7 +314,11 @@ namespace Brazen {
 			// Wait for a physics update cycle to end, then update particles
 			std::lock_guard<std::mutex> physics_lock(physics_mutex);
 
-			// Update the position and velocity of all particles
+			// Update each Spring
+			for (Spring<_Size>& s : springs)
+				s.update();
+
+			// Update the position and velocity of all Particles
 			for (i = 0; i < particles.size(); i++) {
 				particles.at(i)->update(seconds_per_cycle);
 				write_output->at(i).clone(*(particles.at(i)));
