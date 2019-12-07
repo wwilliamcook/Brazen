@@ -4,7 +4,6 @@
  * Defines the class Simulator.
  * 
  * TODO:
- *  -Decide whether Simulator should store objects or pointers
  *  -Implement Simulator::start(...)
  *  -Implement Simulator::stop(...)
  */
@@ -35,7 +34,7 @@ namespace Brazen {
 	class Simulator {
 	private:
 		// ATTRIBUTES
-		std::vector<Particle<_Size> > particles;  // Stores all the particles
+		std::vector<Particle<_Size>*> particles;  // Stores all the particles
 
 		// Vectors containing the output data. Basically, the output generator
 		// juggles the `write_output` and `latest_output` pointers and
@@ -89,7 +88,7 @@ namespace Brazen {
 		 * ---------------------
 		 * Copies the given Particel into the simulation environment.
 		 */
-		void addParticle(Particle<_Size>);
+		void addParticle(const Particle<_Size>&);
 
 		/*
 		 * Function: start
@@ -143,6 +142,10 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	Simulator<_Size>::~Simulator(void) {
+		for (std::uint16_t i = 0; i < particles.size(); i++)
+			delete particles.at(i);
+		particles.clear();
+
 		delete write_output;
 		delete latest_output;
 		delete read_output;
@@ -168,10 +171,17 @@ namespace Brazen {
 	 * Copies the given Particel into the simulation environment.
 	 */
 	template <std::uint8_t _Size>
-	void Simulator<_Size>::addParticle(Particle<_Size> new_particle) {
+	void Simulator<_Size>::addParticle(const Particle<_Size>& new_particle) {
 		// Wait for a physics update cycle to end, then update `particles`
 		std::lock_guard<std::mutex> physics_lock(physics_mutex);
-		particles.push_back(new_particle);
+		// Make sure the output is safe to write to
+		std::lock_guard<std::mutex> output_lock(output_mutex);
+
+		particles.push_back(new Particle<_Size>(new_particle));
+		
+		write_output->push_back(OutputParticle<_Size>());
+		latest_output->push_back(OutputParticle<_Size>());
+		read_output->push_back(OutputParticle<_Size>());
 	}
 
 	/*
@@ -183,6 +193,7 @@ namespace Brazen {
 	void Simulator<_Size>::start(void) {
 		// Not implemented
 		std::cerr << "ERROR: Simulator::start() not implemented." << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
 	/*
@@ -194,6 +205,7 @@ namespace Brazen {
 	void Simulator<_Size>::stop(void) {
 		// Not implemented
 		std::cerr << "ERROR: Simulator::stop() not implemented." << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
 	/*
@@ -207,7 +219,7 @@ namespace Brazen {
 		//   during this function
 		std::lock_guard<std::mutex> output_lock(output_mutex);
 
-		if (output_is_ready) {  // 
+		if (output_is_ready) {
 			output_is_ready = false;  // Set to false until next time
 				// `write_output` and `latest_output` are swapped by the
 				// physics loop.
@@ -228,15 +240,28 @@ namespace Brazen {
 	 * ---------------------
 	 * Performs one cycle of physics calculations in the current thread and
 	 * updates the output pointers.
+	 * 
+	 * Preconditions:
+	 *   running == false
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::updateState(double seconds_per_cycle) {
-		// Do physics stuff
 		std::uint16_t i, j;
 
-		// Update the position and velocity of all particles
-		for (Particle<_Size>& p : this.particles) {
-			p.update(seconds_per_cycle);
+		if (running) {
+			std::cerr << "Error: cannot call updateState(...) on running Simulator instance." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		{  // Do physics stuff
+			// Wait for a physics update cycle to end, then update `particles`
+			std::lock_guard<std::mutex> physics_lock(physics_mutex);
+
+			// Update the position and velocity of all particles
+			for (i = 0; i < particles.size(); i++) {
+				particles.at(i)->update(seconds_per_cycle);
+				write_output->at(i).clone(*(particles.at(i)));
+			}
 		}
 
 		// Update output pointers
