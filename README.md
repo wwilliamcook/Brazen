@@ -15,9 +15,6 @@ Brazen's core physics engine has no additional dependencies and can be used as-i
 **Local Video Monitoring Module:**
 * [SDL 2](https://www.libsdl.org)
 
-**Audio Output Module:**
-* [PortAudio](https://www.portaudio.com)
-
 ### Installing
 
 As Brazen is a header-only C++ library, all that is required for installation is inclusion into your build directory paths.
