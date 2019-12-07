@@ -1,0 +1,19 @@
+Brazen interface classes
+
+Definitions:
+  LIN - linearly oriented component (defined by two endpoint particles)
+  VOL - volumetrically oriented component (defined by N particles)
+
+-----CORE-----
+Engine/Simulator
+
+-----MANIPULATION-----
+Thruster (LIN) - applies force to itself
+Actuator (LIN) - applies opposing forces to attached particles
+Camera (VOL) - renders the environment in 2D from the POV of a virtual camera
+
+-----OUTPUT-----
+TapeMeasure (LIN) - outputs the distance between its endpoints
+GPS - outputs the position vector of a particle
+Spedometer - outputs the velocity vector of a particle
+Accelerometer - outputs the acceleration vector of a particle
