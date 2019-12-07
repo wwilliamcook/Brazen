@@ -1,18 +1,27 @@
 /*
  * simulator.h
  * 
- * Defines the class Simulator.
+ * Author: Weston Cook
+ * 
+ * Distributed under the Mozilla Public Lincence 2.0
+ * 
+ * Defines the class Simulator:
+ *   Stores and manages a collection of Particles
+ *   Performs necessary physics operations
+ *   Exposes simulated environment state through a std::vector of OutputParticles
  * 
  * TODO:
  *  -Implement Simulator::start(...)
  *  -Implement Simulator::stop(...)
  */
 
+
 #ifndef BRAZEN_SIMULATOR_H
 #define BRAZEN_SIMULATOR_H
 
 #include "tuple.h"
 #include "particle.h"
+
 #include <vector>  // std::vector
 #include <chrono>
 #include <atomic>  // std::atomic_bool
@@ -20,6 +29,7 @@
 #include <thread>  // std::thread
 #include <stdlib.h>  // std::uint32_t
 #include <algorithm>  // std::find
+
 
 namespace Brazen {
 	typedef std::chrono::time_point<std::chrono::steady_clock> time_point;
@@ -33,12 +43,12 @@ namespace Brazen {
 	template <std::uint8_t _Size>
 	class Simulator {
 	private:
-		// ATTRIBUTES
+		/**************************** ATTRIBUTES *****************************/
 		std::vector<Particle<_Size>*> particles;  // Stores all the particles
 
 		// Vectors containing the output data. Basically, the output generator
-		// juggles the `write_output` and `latest_output` pointers and
-		// `getOutput()` swaps the `latest_output` and `read_output` pointers.
+		// juggles the write_output and latest_output pointers and
+		// getOutput() swaps the latest_output and read_output pointers.
 		std::vector<OutputParticle<_Size> >* write_output;  // Output list that
 			// is currently being written to
 		std::vector<OutputParticle<_Size> >* latest_output;  // Output list
@@ -49,9 +59,9 @@ namespace Brazen {
 		std::mutex output_mutex;  // Mutex required to modify the three output
 			// list pointers above
 		bool output_is_ready;  // Marked true at the end of every physics loop
-			// and marked false every time `updateOutput()` returns true
+			// and marked false every time updateOutput() returns true
 
-		std::mutex physics_mutex;  // Mutex required to read/modify `particles`
+		std::mutex physics_mutex;  // Mutex required to read/modify particles
 
 		std::atomic_bool running;
 		std::thread physics_thread;
@@ -86,7 +96,7 @@ namespace Brazen {
 		/*
 		 * Function: addParticle
 		 * ---------------------
-		 * Copies the given Particel into the simulation environment.
+		 * Copies the given Particle into the simulation environment.
 		 */
 		void addParticle(const Particle<_Size>&);
 
@@ -172,7 +182,7 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::addParticle(const Particle<_Size>& new_particle) {
-		// Wait for a physics update cycle to end, then update `particles`
+		// Wait for a physics update cycle to end, then update particles
 		std::lock_guard<std::mutex> physics_lock(physics_mutex);
 		// Make sure the output is safe to write to
 		std::lock_guard<std::mutex> output_lock(output_mutex);
@@ -221,10 +231,10 @@ namespace Brazen {
 
 		if (output_is_ready) {
 			output_is_ready = false;  // Set to false until next time
-				// `write_output` and `latest_output` are swapped by the
+				// write_output and latest_output are swapped by the
 				// physics loop.
 
-			// Swap `read_output` and `latest_output` pointers
+			// Swap read_output and latest_output pointers
 			std::vector<OutputParticle<_Size> >* swap_ptr = latest_output;
 			latest_output = read_output;
 			read_output = swap_ptr;
@@ -254,7 +264,7 @@ namespace Brazen {
 		}
 
 		{  // Do physics stuff
-			// Wait for a physics update cycle to end, then update `particles`
+			// Wait for a physics update cycle to end, then update particles
 			std::lock_guard<std::mutex> physics_lock(physics_mutex);
 
 			// Update the position and velocity of all particles
@@ -269,13 +279,13 @@ namespace Brazen {
 			// Coordinate timing with updateOutput()
 			std::lock_guard<std::mutex> output_lock(output_mutex);
 
-			// Swap `write_output` and `latest_output`
+			// Swap write_output and latest_output
 			std::vector<OutputParticle<_Size> >* swap_ptr = latest_output;
 			latest_output = write_output;
 			write_output = swap_ptr;
 
 			output_is_ready = true;  // Set to true until next time
-				// `read_output` and `latest_output` are swapped by
+				// read_output and latest_output are swapped by
 				// updateOutput()
 		}
 	}

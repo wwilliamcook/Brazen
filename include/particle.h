@@ -1,6 +1,16 @@
-// particle.h
-// Written by Weston Cook
-// Defines the structs Particle and OutputParticle
+/*
+ * particle.h
+ * 
+ * Author: Weston Cook
+ * 
+ * Distributed under the Mozilla Public Lincence 2.0
+ * 
+ * Defines the following structs:
+ *   Particle<...> - Represents a simulated particle with necessary physical attributes
+ *   OutputParticle<...> - Represents a particle as just what is needed to display it
+ *   color - Represents an RGB color
+ */
+
 
 #ifndef BRAZEN_PARTICLE_H
 #define BRAZEN_PARTICLE_H
@@ -8,30 +18,37 @@
 #include "tuple.h"
 #include <stdlib.h>  // std::uint8_t
 
+
+/*
+ * Struct: color
+ * -------------
+ * Represents an RGB color.
+ */
 struct color {
 	uint16_t R, G, B;
 
 	color(void):
-		R(0), G(0), B(0)
-	{}
+		R(0), G(0), B(0) {}
 	color(uint16_t R, uint16_t G, uint16_t B) :
-		R(R), G(G), B(B)
-	{}
+		R(R), G(G), B(B) {}
 };
 
 namespace Brazen {
 	/*
-	Struct Particle - represents a massive, infinitessimal particle in N-dimensional Euclidean space.
-	*/
+	 * Struct: Particle
+	 * ----------------
+	 * Represents a massive, infinitessimal particle in N-dimensional Euclidean space.
+	 */
 	template <std::uint8_t _Size>
 	struct Particle {
-		// ATTRIBUTES
+		/**************************** ATTRIBUTES *****************************/
 		Tuple<_Size> pos, vel, F;  // Classical particle descriptions
 		Tuple<_Size> m_delta_pos, m_delta_vel;  // Additional properties for ragdoll physics
 		Tuple<_Size> m_delta_pos_hard, m_delta_vel_hard;  // Even more properties for ragdoll physics
 		double mass, invMass;
 
-		// CONSTRUCTORS
+		/********************* CONSTRUCTORS/DESTRUCTORS **********************/
+
 		Particle(Tuple<_Size> pos, double mass) :
 			pos(pos), vel(true), F(true),
 			mass(mass),
@@ -57,7 +74,16 @@ namespace Brazen {
 			mass(p.mass), invMass(p.invMass)
 		{}
 		
-		// MEMBER FUNCTIONS
+		/********************** MANIPULATION FUNCTIONS ***********************/
+		
+		/*
+		 * Function: update
+		 * ----------------
+		 * Updates the physical properties of the Particle
+		 * 
+		 * Args:
+		 *   seconds_per_cycle: seconds between update calls
+		 */
 		void update(double seconds_per_cycle) {
 			// Update the particle's acceleration, velocity, and position to reflect the forces applied to it
 			if (invMass > 0) {
@@ -93,8 +119,10 @@ namespace Brazen {
 	using particle_ref = std::uint32_t;  // Used as a "pointer" to paricles, since they will be stored in a std::vector in the simulator
 
 	/*
-	Struct OutputParticle - same as "Particle," except only contains information required to display it.
-	*/
+	 * Struct: OutputParticle
+	 * ----------------------
+	 * Same as Particle, except only contains information required to display it.
+	 */
 	template <std::uint8_t _Size>
 	struct OutputParticle {
 		Tuple<_Size> pos;

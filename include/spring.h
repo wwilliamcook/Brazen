@@ -1,25 +1,46 @@
-// spring.h
-// Written by Weston Cook
-// Defines the class Spring
+/*
+ * spring.h
+ * 
+ * Author: Weston Cook
+ * 
+ * Distributed under the Mozilla Public Lincence 2.0
+ * 
+ * Defines the class Spring:
+ *   Represents a spring/beam/rope/etc connecting two particles
+ */
+
 
 #ifndef BRAZEN_SPRING_H
 #define BRAZEN_SPRING_H
 
-#include "tuple.h"
-#include "particle.h"
 #include <vector>
 #include <iostream>
 #include <algorithm>
 
+#include "tuple.h"
+#include "particle.h"
+
+
 namespace Brazen {
-	enum class SpringForceType {  // Specifies restoring force types in a spring-like particle connection
-		SPRING,  // Behaves like an ideal spring
+	/*
+	 * Enum class: SpringForceType
+	 * ---------------------------
+	 * Specifies restoring force types in a spring-like particle connection.
+	 */
+	enum class SpringForceType {
+		SPRING,    // Behaves like an ideal spring
 		CONSTANT,  // Always applies the same amount of force to retain shape
-		STRONG,  // Unable to be compressed or pulled when force_coefficient is 1
+		STRONG,    // Unable to be compressed or pulled when force_coefficient is 1
 		NO_FORCE,  // Does not exert any force
-		MUSCLE  // Force can be controlled dynamically
+		MUSCLE     // Force can be controlled dynamically
 	};
-	enum class SpringType {  // Specifies connection types between particles
+
+	/*
+	 * Enum class: SpringType
+	 * ----------------------
+	 * Provides preset Spring connection types.
+	 */
+	enum class SpringType {
 		BUNGEE,  // Compressed: no force | Stretched: spring force
 		BOUNCY_ROPE,  // Compressed: no force | Stretched: constant force
 		ROPE,  // Compressed: no force | Stretched: unstretchable
@@ -36,11 +57,13 @@ namespace Brazen {
 	};
 
 	/*
-	Class Spring - represents a spring-like connection between two distinct particles.
-	*/
+	 * Class: Spring
+	 * -------------
+	 * Represents a spring-like connection between two distinct particles.
+	 */
 	template <std::uint8_t _Size>
 	class Spring {
-		// ATTRIBUTES
+		/**************************** ATTRIBUTES *****************************/
 		std::uint32_t p1_index, p2_index;
 
 		double natural_length;  // Distance at which the connected particles can be at equilibrium
@@ -51,7 +74,8 @@ namespace Brazen {
 			tension_force_type;  // Type of force to apply when the connection is stretched
 		double deformation_coefficient;  // Mutability of "natural_length" due to prolonged deformation. Value of 0 allows no deformation; value of 1 provides no resistance to deformation.
 
-		// CONSTRUCTORS
+		/********************* CONSTRUCTORS/DESTRUCTORS **********************/
+
 		Spring(std::uint32_t p1_index, std::uint32_t p2_index, double natural_length, double force_strength) :  // Behaves like an ideal spring
 			p1_index(p1_index), p2_index(p2_index),
 			natural_length(natural_length),
@@ -66,6 +90,7 @@ namespace Brazen {
 				exit(EXIT_FAILURE);
 			}
 		}
+
 		Spring(std::uint32_t p1_index, std::uint32_t p2_index, double natural_length,
 			double compression_force_strength, double tension_force_strength,
 			SpringType spring_type, double deformation_coefficient) :  // Behave like an ideal spring
@@ -134,6 +159,7 @@ namespace Brazen {
 				throw std::exception("SpringType \"MUSCLE\" has not been implemented yet.");
 			}
 		}
+
 		Spring(const Spring<_Size>& s) :
 			p1_index(s.p1_index), p2_index(s.p2_index),
 			natural_length(s.natural_length),
@@ -144,8 +170,14 @@ namespace Brazen {
 			deformation_coefficient(s.deformation_coefficient)
 		{}
 
-		// MEMBER FUNCTIONS
-		// Apply the designated forces to the two particles.
+		/********************** MANIPULATION FUNCTIONS ***********************/
+
+		/*
+		 * Function: update
+		 * ----------------
+		 * Applies the designated forces to the two particles according to the
+		 * Spring type.
+		 */
 		void update(std::vector<Particle<_Size> >& particles) {
 			// Acquire pointers to the particles that need to be updated
 			Particle<_Size> *p1 = particles.at(p1_index),

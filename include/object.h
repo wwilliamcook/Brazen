@@ -1,61 +1,89 @@
-// object.h
-// Written by Weston Cook
-// Defines the class Object
+/*
+ * spring.h
+ * 
+ * Author: Weston Cook
+ * 
+ * Distributed under the Mozilla Public Lincence 2.0
+ * 
+ * Defines the class Object:
+ *   Collection of Particles enabling collision resolution
+ */
+
 
 #ifndef BRAZEN_OBJECT_H
 #define BRAZEN_OBJECT_H
+
+#include <vector>
+#include <iostream>
+#include <algorithm>
 
 #include "tuple.h"
 #include "particle.h"
 #include "surface.h"
 #include "spring.h"
-#include <vector>
-#include <iostream>
-#include <algorithm>
+
 
 namespace Brazen {
 	/*
-	Class Object - represents a structured collection of particles, connected by springs.
-	*/
+	 * Class: Object
+	 * -------------
+	 * Represents a structured collection of particles, connected by springs.
+	 */
 	template <std::uint8_t _Size>
 	class Object {
+		/**************************** ATTRIBUTES *****************************/
 	private:
 		double massSum;
 		double invMassSum;
 	public:
 		std::vector<particle_ref<_Size> > particle_refs;
 		std::vector<Surface<_Size> > surfaces;
+		
+		/********************* CONSTRUCTORS/DESTRUCTORS **********************/
 
+		/*
+		 * Default constructor
+		 */
 		Object(void) {}
-		// Instantiate the object with the given collection of particles with a connection of the given type between each pair.
+
+		/*
+		 * Alternate constructor
+		 * ---------------------
+		 * Instantiates the object with the given collection of particles with
+		 * a connection of the given type between each pair.
+		 */
 		Object(const std::vector<particle_ref<_Size> >& particle_refs,
 			const std::vector<Surface<_Size> >& surfaces,
 			const Spring<_Size>& spring) :
 			particle_refs(particle_refs), surfaces(surfaces)
 		{}
 
-		// Compute the total mass and total inverse mass of the object
-		void computeMass(const std::vector<Particle<_Size> >& particles) {
-			massSum = invMassSum = 0;
+		/************************* ACCESS FUNCTIONS **************************/
 
-			for (const Particle<_Size>& p : particle_refs) {
-				massSum += particles[p].mass;
-				invMassSum += particles[p].invMass;
-			}
-		}
-
-		// Return the sum of masses
+		/*
+		 * Function: mass
+		 * --------------
+		 * Returns the total mass.
+		 */
 		double mass(void) const {
 			return massSum;
 		}
 
-		// Return the sum of inverse masses
+		/*
+		 * Function: invMass
+		 * -----------------
+		 * Returns the total inverse mass.
+		 */
 		double invMass(void) const {
 			return invMassSum;
 		}
-
-		// Return the center of mass.
-		Tuple<_Size> centerOfMass(const std::vector<Particle<_Size> >& particles) {
+		
+		/*
+		 * Function: centerOfMass
+		 * ----------------------
+		 * Returns the center of mass of the associated particles.
+		 */
+		Tuple<_Size> centerOfMass(const std::vector<Particle<_Size> >& particles) const {
 			Tuple<_Size> out(true);
 
 			for (Particle<_Size> p : particles)
@@ -64,10 +92,33 @@ namespace Brazen {
 			return out * invMassSum;
 		}
 
+		/********************** MANIPULATION FUNCTIONS ***********************/
+
+		/*
+		 * Function: computeMass
+		 * ---------------------
+		 * Computes the total mass and total inverse mass of the object.
+		 */
+		void computeMass(const std::vector<Particle<_Size> >& particles) const {
+			massSum = invMassSum = 0;
+
+			for (const Particle<_Size>& p : particle_refs) {
+				massSum += particles[p].mass;
+				invMassSum += particles[p].invMass;
+			}
+		}
+
 		friend class Simulator;
 	};
 
-	// Return whether the two objects are intersecting and, if so, find the axis of maximum separation.
+	/*************************** HELPER FUNCTIONS ****************************/
+
+	/*
+	 * Function: detectObjectCollision
+	 * -------------------------------
+	 * Returns whether the two objects are intersecting and, if so, finds the
+	 * axis of maximum separation.
+	 */
 	template <std::uint8_t _Size>
 	bool detectObjectCollision(const std::vector<Particle<_Size> >& particles, const Object<_Size>& obj1, const Object<_Size>& obj2,
 		Tuple<_Size>& axisOfMinimumIntersection, double& intersection) {
@@ -121,7 +172,12 @@ namespace Brazen {
 		return true;  // No separating axis found, so objects must be either touching or intersecting.
 	}
 
-	// Detect and resolve collisions between the given objects. Only works for convex shapes.
+	/*
+	 * Function: resolveObjectCollision
+	 * --------------------------------
+	 * Detects and resolves collisions between the given objects.
+	 * Only works for convex shapes.
+	 */
 	template <std::uint8_t _Size>
 	void resolveObjectCollision(const std::vector<Particle<_Size> >& particles, const Object<_Size>& obj1, const Object<_Size>& obj2) {
 		Tuple<_Size> axis;
