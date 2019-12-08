@@ -79,25 +79,38 @@ namespace Brazen {
 		/*
 		 * Function: getParticleDisplayCoordinates
 		 * ---------------------------------------
-		 * Gets the position (in the display window) of the given position
-		 * in the simulation.
+		 * Gets the position (in the display window) of a particle at the
+		 * given virtual position.
 		 * 
-		 * Returns: true if position is visible, false otherwise
+		 * Args:
+		 *   pos: position of Particle
+		 *   p_rad: radius of Particle
+		 *   x, y, w, h: output references
+		 * 
+		 * Returns: true if particle is visible, false otherwise
 		 */
-		bool getParticleDisplayCoordinates(Tuple<_Size> pos, std::array<std::uint16_t, 2>& out) const {
+		bool getParticleDisplayCoordinates(const Tuple<_Size>& pos, double p_rad,
+										   int& x, int& y,
+										   int& w, int& h) const {
 			Tuple<_Size> posRelativeToCamera,
 			             posRelativeToPOV,
 						 posInViewingPlane;
+			double distance, angle;
 			
 			posRelativeToCamera = pos - this->pos;
 			posRelativeToPOV = posRelativeToCamera + dir * scale;
+			distance = magnitude(posRelativeToPOV);
+			angle = sqrtf(distance*distance - p_rad*p_rad);
+
 			if (dot(posRelativeToPOV, dir) > 0) {
 				posInViewingPlane = (posRelativeToCamera * scale + scaleSquaredTimesDir)
 					/ (dot(posRelativeToCamera, dir) + scale)
 					- scaleTimesDir;  // Position of the particle projected onto the viewing plane
 				
-				out[0] = dispW / 2. + dot(posInViewingPlane, screenX) * dispW / vdispW;
-				out[1] = dispH / 2. - dot(posInViewingPlane, screenY) * dispH / vdispH;
+				x = dispW / 2. + dot(posInViewingPlane, screenX) * dispW / vdispW;
+				y = dispH / 2. - dot(posInViewingPlane, screenY) * dispH / vdispH;
+
+				w = h = 2. * scale * tanf(angle);
 
 				return true;
 			}
@@ -148,9 +161,9 @@ namespace Brazen {
 		 * Moves the camera.
 		 */
 		void move(double forward, double up, double right) {
-			pos += dir * (forward * MOVEMENT_RATE);
-			pos += screenY * (up * MOVEMENT_RATE);
-			pos += screenX * (right * MOVEMENT_RATE);
+			pos += dir * forward;
+			pos += screenY * up;
+			pos += screenX * right;
 		}
 
 		/*
@@ -174,35 +187,6 @@ namespace Brazen {
 		}
 	};
 
-	namespace {
-		/*
-		 * Function: drawRect
-		 * ------------------
-		 * Draws a rectangle using SDL.
-		 */
-		void drawRect(SDL_Renderer* renderer, int x, int y, int w, int h) {
-			SDL_Rect rect;
-
-			rect.x = x;
-			rect.y = y;
-			rect.w = w;
-			rect.h = h;
-
-			SDL_RenderDrawRect(renderer, &rect);
-		}
-
-		/*
-		 * Struct: pixelAtomData
-		 * ---------------------
-		 */
-		struct pixelAtomData {
-			bool empty;
-			double distance;
-
-			pixelAtomData(void) : empty(true) {}
-		};
-	}
-
 	/*
 	 * Class: VideoOutput
 	 * ------------------
@@ -221,25 +205,22 @@ namespace Brazen {
 		std::thread outputThread;
 		std::atomic_bool running;
 
-		const uint16_t displayWidth, displayHeight;
-		uint16_t windowWidth, windowHeight,
-			     windowWidthMargin, windowHeightMargin;
+		const std::uint16_t displayWidth, displayHeight;
+		std::uint16_t windowWidth, windowHeight,
+			          windowWidthMargin, windowHeightMargin;
 		std::array<double, 2> displayCenter;
+
+		const double particleRadius;  // Radius of virtual particle (meters)
 
 		const double timeInterval;  // Minimum number of seconds between updates
 
+		// SDL stuff
 		SDL_Window* window;
 		SDL_Renderer* renderer;
-		SDL_Texture* texture;
+		SDL_Surface* circleSurface;
+		SDL_Texture* circleTexture;
+		SDL_Rect rect;
 		SDL_Event pendingEvent;
-
-		typedef std::vector<std::vector<pixelAtomData> > screenAtomData;
-
-		screenAtomData pixData;
-
-		const unsigned int texWidth = 1024;
-		const unsigned int texHeight = 1024;
-		std::vector<std::uint8_t> pixels;
 
 		bool mouseLeftDown, mouseRightDown;
 		enum cameraMoveKeys {
@@ -267,14 +248,15 @@ namespace Brazen {
 		VideoOutput(Simulator<_Size>& simulator, std::string windowTitle,
 			const uint16_t displayWidth, const uint16_t displayHeight,
 			const Camera<_Size>& camera,
+			double particleRadius,
 			double updateFrequencyHz = 60.) :
 			simulator(&simulator), camera(camera),
 			windowTitle(windowTitle),
 			displayWidth(displayWidth), displayHeight(displayHeight),
 			windowWidth(displayWidth), windowHeight(displayHeight),
 			windowWidthMargin(0), windowHeightMargin(0),
+			particleRadius(particleRadius),
 			timeInterval(1. / updateFrequencyHz),
-			pixels(texWidth * texHeight * 4, 0),
 			mouseLeftDown(false), mouseRightDown(false)
 		{
 			uint16_t i;
@@ -294,6 +276,8 @@ namespace Brazen {
 
 			window = NULL;
 			renderer = NULL;
+			circleSurface = NULL;
+			circleTexture = NULL;
 		}
 
 		/*
@@ -319,12 +303,14 @@ namespace Brazen {
 			outputThread.join();
 		}
 	private:
-		void init(void) {//initialize SDL
+		void init(void) {
+			// Initialize SDL
 			if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 				SDL_Quit();
 				std::cerr << "Unable to initialize SDL. SDL_Error: " << SDL_GetError() << std::endl;
 				exit(EXIT_FAILURE);
 			}
+			// Create window
 			window = SDL_CreateWindow(
 				windowTitle.c_str(),
 				SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -335,112 +321,103 @@ namespace Brazen {
 				std::cerr << "Unable to create SDL window. SDL_Error: " << SDL_GetError() << std::endl;
 				exit(EXIT_FAILURE);
 			}
+			// Create renderer
 			renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 			if (renderer == NULL) {
 				SDL_Quit();
 				std::cerr << "Unable to create SDL renderer. SDL_Error: " << SDL_GetError() << std::endl;
 				exit(EXIT_FAILURE);
 			}
+			// Load circle.bmp as an SDL_Texture
+			circleSurface = SDL_LoadBMP("circle.bmp");
+			if (circleSurface == NULL) {
+				SDL_Quit();
+				std::cerr << "unable to open 'circle.bmp'. SDL_Error: " << SDL_GetError() << std::endl;
+				exit(1);
+			}
+			circleTexture = SDL_CreateTextureFromSurface(renderer, circleSurface);
+			if (circleTexture == NULL) {
+				SDL_Quit();
+				std::cerr << "unable to create SDL texture. SDL_Error: " << SDL_GetError() << std::endl;
+				exit(1);
+			}
+			SDL_FreeSurface(circleSurface);
+			circleSurface = NULL;
+			if (!SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND) ||
+				!SDL_SetTextureBlendMode(circleTexture, SDL_BLENDMODE_BLEND)) {
+				std::cerr << "SDL alpha blend mode not supported." << std::endl;
+			}
+		}
 
-			texture = SDL_CreateTexture(renderer,
-				SDL_PIXELFORMAT_ABGR8888,
-				SDL_TEXTUREACCESS_STREAMING,
-				texWidth, texHeight);
+		/*
+		 * Function: drawRect
+		 * ------------------
+		 * Draws a rectangle to the display.
+		 */
+		void drawRect(int x, int y, int w, int h) {
+			rect.x = x;
+			rect.y = y;
+			rect.w = w;
+			rect.h = h;
+			SDL_RenderDrawRect(renderer, &rect);
+		}
+
+		/*
+		 * Function: renderTexture
+		 * -----------------------
+		 * Blits the given SDL_Texture to the display.
+		 */
+		void renderTexture(SDL_Texture* tex, int x, int y, int w, int h) {
+			rect.x = x;
+			rect.y = y;
+			rect.w = w;
+			rect.h = h;
+			SDL_RenderCopy(renderer, tex, NULL, &rect);
+		}
+
+		/*
+		 * Function: drawParticle
+		 * ----------------------
+		 * Draws the given OutputParticle to the display.
+		 */
+		void drawParticle(const OutputParticle<_Size>& p) {
+			camera.getParticleDisplayCoordinates(
+				p.pos, particleRadius,
+				rect.x, rect.y, rect.w, rect.h);
+			SDL_RenderCopy(renderer, circleTexture, NULL, &rect);
 		}
 
 		void runOutput(void) {
-			std::vector<OutputParticle<_Size> > particles;
 			time_point now, lastOutputTime;
-			std::uint32_t i;
-			std::array<uint16_t, 2> pos;
-			Uint64 start, end, freq;
-			std::uint16_t offset;
 			double secondsElapsed = 0;
-			double distance;
 
-			now = lastOutputTime = std::chrono::steady_clock::now();
+			lastOutputTime = std::chrono::steady_clock::now();
 
 			init();
 
 			while (running.load()) {
-				//wait until it is time for the next output
-				while (secondsElapsed < timeInterval) {
+				// Wait until it is time for the next output
+				do {
 					now = std::chrono::steady_clock::now();
 					secondsElapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastOutputTime).count() * 0.000001;
-				}
+				} while (secondsElapsed < timeInterval);
 				lastOutputTime = now;
 
-				simulator->getOutput(particles);//retrieve the particle data
+				simulator->updateOutput();  // Update output data
 
-				start = SDL_GetPerformanceCounter();
 				SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 				SDL_RenderClear(renderer);
-				drawRect(renderer, 0, 0, windowWidth, windowHeight);
+				drawRect(0, 0, windowWidth, windowHeight);
 
-				pixData = screenAtomData(displayWidth, std::vector<pixelAtomData>(displayHeight));
+//				std::cout << "particle count: " << simulator->size() << std::endl;
+//				std::cout << camera.pos << camera.dir << camera.screenX << camera.screenY << '\n';
 
-/*				for (i = 0; i < texWidth * texHeight * 4; i += 4) {
-					pixels[i + 0] = 255;
-					pixels[i + 1] = 255;
-					pixels[i + 2] = 255;
-					pixels[i + 3] = SDL_ALPHA_OPAQUE;
-				}*/
-
-				/*std::cout << "particle count: " << particles.size() << std::endl;
-				std::cout << "camera pos: " << camera.cameraPos << std::endl;
-				std::cout << "camera dir: " << camera.cameraDir << std::endl;
-				std::cout << "camera horiz: " << camera.cameraHorizontal << std::endl;
-				std::cout << "camera vert: " << camera.cameraVertical << std::endl;*/
-				//map the particles onto the display
-				for (i = 0; i < particles.size(); i++) {
-					if (camera.getParticleDisplayCoordinates(particles[i].pos, pos)) {
-						if (0 <= pos[0] && pos[0] < displayWidth &&
-							0 <= pos[1] && pos[1] < displayHeight) {//the particle is on the screen
-							distance = camera.getDistance(particles[i].pos);//distance from the particle to the screen
-
-							if (pixData.at(pos[0]).at(pos[1]).empty) {//that pixel has no data yet
-								SDL_SetRenderDrawColor(renderer,
-									particles[i].colorVal.R,
-									particles[i].colorVal.G,
-									particles[i].colorVal.B,
-									SDL_ALPHA_OPAQUE);
-								SDL_RenderDrawPoint(renderer, pos[0], pos[1]);
-
-								pixData.at(pos[0]).at(pos[1]).empty = false;
-								pixData.at(pos[0]).at(pos[1]).distance = distance;
-							}
-							else if (distance < pixData.at(pos[0]).at(pos[1]).distance) {//the atom that is currently occupying the pixel is farther away than this atom
-								SDL_SetRenderDrawColor(renderer,
-									particles[i].colorVal.R,
-									particles[i].colorVal.G,
-									particles[i].colorVal.B,
-									SDL_ALPHA_OPAQUE);
-								SDL_RenderDrawPoint(renderer, pos[0], pos[1]);
-
-								pixData.at(pos[0]).at(pos[1]).distance = distance;
-							}
-/*							offset = (texWidth * 4 * uint32_t(pos.y)) + 4 * uint32_t(pos.x);
-							pixels[offset + 0] = particles[i].colorVal.B;
-							pixels[offset + 1] = particles[i].colorVal.G;
-							pixels[offset + 2] = particles[i].colorVal.R;
-							pixels[offset + 3] = SDL_ALPHA_OPAQUE;*/
-						}
-					}
-				}
-
-				//update the texture
-//				SDL_UpdateTexture(
-//					texture,
-//					NULL,
-//					&pixels[0],
-//					texWidth * 4);
-				//update the display
-//				SDL_RenderCopy(renderer, texture, NULL, NULL);
+				// Draw the particles
+				for (const OutputParticle<_Size>& p : simulator->getOutput())
+					drawParticle(p);
+				
+				// Render the display
 				SDL_RenderPresent(renderer);
-
-				end = SDL_GetPerformanceCounter();
-				freq = SDL_GetPerformanceFrequency();
-				std::cout << "Frame time: " << (end - start) / static_cast<double>(freq) * 1000.0 << "ms" << std::endl;
 
 				//handle SDl events
 				handleSDL_Events(secondsElapsed);
@@ -579,7 +556,9 @@ namespace Brazen {
 				if (movementKeysPressed[MOVEMENT_LEFT])
 					rght -= secondsElapsed;
 
-				camera.move(fwd, up, rght);
+				camera.move(fwd * MOVEMENT_RATE, 
+							up * MOVEMENT_RATE, 
+							rght * MOVEMENT_RATE);
 			}
 			camera.update();
 		}
