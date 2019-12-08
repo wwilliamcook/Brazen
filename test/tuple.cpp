@@ -15,7 +15,7 @@ void print(T arg, Args... args) {
 	print(args...);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 	Tuple<1> a1(3), b1(4);
 	Tuple<2> a2(2, 3), b2(4, 5);
 	Tuple<3> a3(1, 2, 3), b3(4, 5, 6);

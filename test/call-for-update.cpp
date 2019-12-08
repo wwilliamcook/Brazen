@@ -28,7 +28,7 @@ typedef Brazen::Simulator<DIMENSIONS> Simulator;
 
 using namespace std;
 
-int main() {
+int main(int argc, char* argv[]) {
     Simulator simulator;
     std::uint16_t i, j, k;
 
