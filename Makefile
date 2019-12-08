@@ -14,7 +14,7 @@
 
 PROG=Brazen
 CC=g++
-CCFLAGS=-Iinclude -lSDL2 -pthread -std=c++11 -g3 -Wall
+CCFLAGS=-Iinclude -lSDL2 -pthread -std=c++11 -g3 -Wall -Wno-switch
 CPPS = $(wildcard src/core/**.cpp)
 DEPS=include/* src/**
 
