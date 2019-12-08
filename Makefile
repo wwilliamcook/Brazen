@@ -14,9 +14,10 @@
 
 PROG=Brazen
 CC=g++
-CCFLAGS=-Iinclude -Ideps/SDL2/include -Ldeps/SDL2/src -lSDL2 -pthread -std=c++11 -g3 -Wall -Wno-switch -Wno-narrowing
+SDLDIR = deps/SDL2-make
 CPPS = $(wildcard src/core/**.cpp)
 DEPS=include/* src/**
+CCFLAGS=-Iinclude -I$(SDLDIR)/include -L$(SDLDIR)/src -lSDL2 -pthread -std=c++11 -g3 -Wall -Wno-switch -Wno-narrowing
 
 .PHONY: all
 all: tests $(PROG)
