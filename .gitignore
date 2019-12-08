@@ -32,12 +32,12 @@
 *.exe
 
 # Compiled binaries and object files
-bin/
-obj/
+bin/*
+obj/*
 
 # Dependency libraries
-deps/
+deps/*
 
-# Visual Studio (Code)
-/.vs
-.vscode
+# Visual Studio
+.vs/
+.vscode/
