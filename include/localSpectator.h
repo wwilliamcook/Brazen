@@ -29,96 +29,147 @@
 #include <iostream>
 #include <stdlib.h>
 
-#define MOVEMENT_RATE 0.5//meters per second
-#define ROTATION_RATE 0.004
+#define MOVEMENT_RATE 0.5  // Meters per second
+#define ROTATION_RATE 0.004  // Radians per second
 
 
 namespace PhysicsSimulator {
 	/*
 	 * Class: Camera
 	 * -------------
+	 * Represents a virtual camera that has no influence on the simulation.
+	 * Used to convert virtual positions to x,y positions in a display window.
 	 */
-	template <class dtype>
+	template <std::uint8_t _Size>
 	class Camera {
 	private:
-		uint16_t displayWidth, displayHeight;
-		double virtualDisplayWidth, virtualDisplayHeight;//size of computer screen in virtual environment
-		Vector3D<dtype> cameraPos, initialCameraPos;//position of camera
-		Vector3D<dtype> cameraDir, initialCameraDir;//direction of the camera
-		Vector3D<dtype> cameraHorizontal, cameraVertical;//vectors that are orthogonal to each other and the camera direction
-		dtype cameraXangle, cameraYangle;
+		/**************************** ATTRIBUTES *****************************/
+		std::uint16_t dispW, dispH;  // Size of computer window
+		double vdispW, vdispH;  // Size of window in simulation
+		Tuple<_Size> pos, initPos;  // Position of camera
+		Tuple<_Size> dir, initDir;  // Direction of the camera
+		Tuple<_Size> screenX, screenY;  // Vectors that are orthogonal to each other and the camera direction
+		double cameraXangle, cameraYangle;  // Angle of view
 
 		double scale;
-		Vector3D<dtype> scaleTimesCameraDir, scaleSquaredTimesCameraDir;
+		Tuple<_Size> scaleTimesDir, scaleSquaredTimesDir;
+
 	public:
-		Camera(double virtualDisplayWidth, double virtualDisplayHeight,
-			Vector3D<dtype> cameraPos, Vector3D<dtype> cameraDir) :
-			virtualDisplayWidth(virtualDisplayWidth), virtualDisplayHeight(virtualDisplayHeight),
-			cameraPos(cameraPos), initialCameraPos(cameraPos),
-			cameraDir(cameraDir), initialCameraDir(cameraDir),
-			scale(1.)
+		/********************* CONSTRUCTORS/DESTRUCTORS **********************/
+
+		Camera(double vdispW, double vdispH,
+			   Tuple<_Size> pos, Tuple<_Size> dir) :
+			   vdispW(vdispW), vdispH(vdispH),
+			   pos(pos), initPos(pos),
+			   dir(dir), initDir(dir),
+			   scale(1.)
 		{}
+
+		/************************* ACCESS FUNCTIONS **************************/
 	private:
-		dtype getDistance(Vector3D<dtype> pos3D) {
-			return magnitude(pos3D - cameraPos);
+		/*
+		 * Function: getDistance
+		 * ---------------------
+		 * Returns the distance between a given position vector and the camera.
+		 */
+		double getDistance(Tuple<_Size> pos) const {
+			return magnitude(pos - this->pos);
 		}
-		bool getParticleDisplayCoordinates(Vector3D<dtype> pos3D, Vector2D<uint16_t>& out) {
-			Vector3D<dtype> posRelativeToCamera,
-				posRelativeToPOV,
-				posInViewingPlane;
 
-			posRelativeToCamera = pos3D - cameraPos;
-			posRelativeToPOV = posRelativeToCamera + cameraDir * scale;
-			if (dot(posRelativeToPOV, cameraDir) > 0) {
-				posInViewingPlane = (posRelativeToCamera * scale + scaleSquaredTimesCameraDir)
-					/ (dot(posRelativeToCamera, cameraDir) + scale)
-					- scaleTimesCameraDir;//position of the particle projected into the viewing plane
-
-				out.x = displayWidth / 2 +
-					dot(posInViewingPlane, cameraHorizontal) * displayWidth / virtualDisplayWidth;
-				out.y = displayHeight / 2 -
-					dot(posInViewingPlane, cameraVertical) * displayHeight / virtualDisplayHeight;
+		/*
+		 * Function: getParticleDisplayCoordinates
+		 * ---------------------------------------
+		 * Gets the position (in the display window) of the given position
+		 * in the simulation.
+		 * 
+		 * Returns: true if position is visible, false otherwise
+		 */
+		bool getParticleDisplayCoordinates(Tuple<_Size> pos, std::array<std::uint16_t, 2>& out) const {
+			Tuple<_Size> posRelativeToCamera,
+			             posRelativeToPOV,
+						 posInViewingPlane;
+			
+			posRelativeToCamera = pos - this->pos;
+			posRelativeToPOV = posRelativeToCamera + dir * scale;
+			if (dot(posRelativeToPOV, dir) > 0) {
+				poInViewingPlane = (posRelativeToCamera * scale + scaleSquaredTimesDir)
+					/ (dot(posRelativeToCamera, dir) + scale)
+					- scaleTimesCameraDir;  // Position of the particle projected onto the viewing plane
+				
+				out[0] = dispW / 2. + dot(posInViewingPlane, screenX) * dispW / vdispW;
+				out[1] = dispH / 2. - dot(posInViewingPlane, screenY) * dispH / vdispH;
 
 				return true;
 			}
 			else
 				return false;
 		}
+		
+		/********************** MANIPULATION FUNCTIONS ***********************/
 
+		/*
+		 * Function: update
+		 * ----------------
+		 * Updates the internal values of the camera relative to pos and dir.
+		 */
 		void update(void) {
-			cameraDir = unit(cameraDir);//make cameraDir a unit vector
+			dir = unit(dir);
 
-			//find cameraHorizontal
-			cameraHorizontal.x = cameraDir.y;
-			cameraHorizontal.y = -cameraDir.x;
-			cameraHorizontal.z = 0;
-			cameraHorizontal = unit(cameraHorizontal);
-			//find cameraVertical
-			cameraVertical = cross(cameraHorizontal, cameraDir);
+			// Find screenX
+			screenX[0] = dir[1];
+			screenX[1] = -dir[0];
+			screenX[2] = 0;
+			screenX = unit(screenX);
 
-			//find projection values
-			scaleTimesCameraDir = cameraDir * scale;
-			scaleSquaredTimesCameraDir = scaleTimesCameraDir * scale;
+			// Find screenY
+			screenY = cross(screenX, dir);
 
-			cameraXangle = 2. * atanl(virtualDisplayWidth / 2. / scale);
-			cameraYangle = 2. * atanl(virtualDisplayHeight / 2. / scale);
+			// Find projection values
+			scaleTimesDir = dir * scale;
+			scaleSquaredTimesDir = scaleTimesDir * scale;
+
+			cameraXangle = 2. * atanl(vdispW / 2. / scale);
+			cameraYangle = 2. * atanl(vdispH / 2. / scale);
 		}
 
-		void rotate(dtype xrel, dtype yrel) {
-			cameraDir += cameraHorizontal * (xrel * ROTATION_RATE / sqrt(scale) * abs(dot(cameraVertical, Vector3D<dtype>(0,0,1))))
-				- cameraVertical * (yrel * ROTATION_RATE / sqrt(scale));
+		/*
+		 * Function: rotate
+		 * ----------------
+		 * Rotates the camera.
+		 */
+		void rotate(double xrel, double yrel) {
+			dir += screenX * (xrel * ROTATION_RATE / sqrt(scale) * abs(dot(screenY, Tuple<_Size>({ 0., 0., 1. }))))
+				- screenY * (yrel * ROTATION_RATE / sqrt(scale));
 		}
-		void move(dtype forward, dtype up, dtype right) {
-			cameraPos += cameraDir * (forward * MOVEMENT_RATE);
-			cameraPos += cameraVertical * (up * MOVEMENT_RATE);
-			cameraPos += cameraHorizontal * (right * MOVEMENT_RATE);
+
+		/*
+		 * Function: move
+		 * --------------
+		 * Moves the camera.
+		 */
+		void move(double forward, double up, double right) {
+			pos += dir * (forward * MOVEMENT_RATE);
+			pos += screenY * (up * MOVEMENT_RATE);
+			pos += screenX * (right * MOVEMENT_RATE);
 		}
-		void rescale(dtype value) {
+
+		/*
+		 * Function: rescale
+		 * -----------------
+		 * Changes the zoom level of the camera.
+		 */
+		void rescale(double value) {
 			scale += scale * value;
 		}
+
+		/*
+		 * Function: reset
+		 * ---------------
+		 * Resets the position and direction of the camera.
+		 */
 		void reset(void) {
-			cameraPos = initialCameraPos;
-			cameraDir = initialCameraDir;
+			pos = initPos;
+			dir = initDir;
 			scale = 1.;
 		}
 
@@ -127,6 +178,11 @@ namespace PhysicsSimulator {
 	};
 
 	namespace {
+		/*
+		 * Function: drawRect
+		 * ------------------
+		 * Draws a rectangle using SDL.
+		 */
 		void drawRect(SDL_Renderer* renderer, int x, int y, int w, int h) {
 			SDL_Rect rect;
 
@@ -138,10 +194,13 @@ namespace PhysicsSimulator {
 			SDL_RenderDrawRect(renderer, &rect);
 		}
 
-		template <class dtype>
+		/*
+		 * Struct: pixelAtomData
+		 * ---------------------
+		 */
 		struct pixelAtomData {
 			bool empty;
-			dtype distance;
+			double distance;
 
 			pixelAtomData(void) : empty(true) {}
 		};
