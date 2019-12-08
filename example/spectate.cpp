@@ -40,13 +40,12 @@ int main(int argc, char* argv[]) {
                              0.05);
 
     // Add some Particles
-    simulator.addParticle(Particle(Vect({ 1, 0, 1 }), 1));
-    simulator.addParticle(Particle(Vect({ 0, 1, 0 }), 2));
-    simulator.addParticle(Particle(Vect({ -1, 0, -1 }), 3));
-    simulator.addParticle(Particle(Vect({ 0, -1, 0 }), Vect({ .05, 0., 0. }), 4));
+	simulator.addParticle(Particle(Vect({ .1, 0., 0. }), Vect({ 0., 0., -0.1 }), 1));
+	simulator.addParticle(Particle(Vect({ 0., 0., 0. }), Vect({ 0., 0., 0.1 }), 1));
+    simulator.addParticle(Particle(Vect({ -.1, 0., -.1 }), 2));
 
     // Add some Springs
-    simulator.addSpring(0, 1, Spring(.5, .2));
+    simulator.addSpring(0, 1, Spring(.5, 20.));
 
     simulator.start();
     video_output.start();
