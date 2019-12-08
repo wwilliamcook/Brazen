@@ -1,45 +1,40 @@
 # Brazen
 
-Brazen is an N-dimensional physics engine designed for modularity and extensibility. It provides a foundation upon which to build a variety of physics-based applications, and comes with modules for virtual camera output, virtual sensor output, virtual actuator input, and rudimentary audio output. It offers protocols for multithreaded asynchronous physics updates for real-time applications as well as a call-for-update mode for high temporal-resolution applications.
+Brazen is an N-dimensional physics engine designed for modularity and extensibility, and provides a foundation upon which to build a variety of physics-based applications. It offers protocols for multithreaded asynchronous physics updates for real-time applications as well as a call-for-update mode for high temporal-resolution applications.
 
-**NOTE: This project is still in its infancy and has no full releases yet. For a demonstration of its future capabilities, see the [old demos](docs/old-physics-engine) from its past life.**
+## Prerequisites
+
+Brazen's core physics engine is in the form of a header-only C++ library and can be used as is. The following dependencies are optional:
+
+* [Simple DirectMedia Layer 2.0](https://www.libsdl.org/) - required to view the simulated environment
 
 ## Getting Started
 
-For a quick demonstration of Brazen's capabilities and how to use it within a program, see the applications in [`examples`](/examples/).
+After downloading this repository, follow the steps below to install Simple DirectMedia Layer in your respective environment.
 
-### Prerequisites
+### Linux
 
-Brazen's core physics engine has no additional dependencies and can be used as-is. Additional dependencies are required for some of the included optional modules:
-
-**Local Video Monitoring Module:**
-* [SDL 2](https://www.libsdl.org)
-
-### Installing
-
-As Brazen is a header-only C++ library, all that is required for installation is inclusion into your build directory paths.
-
-Here is an example of building [`examples/bouncy_cube.cpp`](examples/bouncy_cube.cpp) using `g++`:
+Go to SDL's [download page](https://www.libsdl.org/download-2.0.php) and download the source code. Extract the downloaded file and place `SDL2-2.X.X` into Brazen's `deps` folder as `SDL2-make`. Then navigate to `SDL2-make` and run the following commands in a terminal to build SDL:
 
 ```
-g++ -Iinclude examples/bouncy_cube.cpp
+$ ./configure
+$ make all
 ```
 
-## Contributing
+You may then compile the examples using `$ make examples` from the root directory of Brazen.
 
-Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests to us.
+### Windows (Visual Studio)
+
+Go to SDL's [download page](https://www.libsdl.org/download-2.0.php) and download the Windows Visual C++ development library. Extract the downloaded file and place `SDL2-2.X.X` into the `deps` folder as `SDL2-vs`. You may then open `VisualC++\Brazen.sln` using Visual Studio to build examples and tests.
 
 ## References
 
-* [Directory Structure for a C++ Project](https://mariuszbartosik.com/directory-structure-for-a-c-project/)
 * [Lazy Foo' Productions - Beginning Game Programming v2.0](https://lazyfoo.net/tutorials/SDL/)
 
 ## Authors
 
-* **Weston Cook** - *Initial work* - [wwilliamcook](https://github.com/wwilliamcook)
-
-See also the list of [contributors](https://github.com/wwilliamcook/Brazen/contributors) who participated in this project.
+* **Weston Cook** - [wwilliamcook](https://github.com/wwilliamcook)
 
 ## License
 
-This project is licensed under the Mozilla Public License 2.0 - see the [`LICENSE`](LICENSE) file for details.
+This project is distributed under the Mozilla Public License 2.0 - see the [`LICENSE`](LICENSE) file for details.
