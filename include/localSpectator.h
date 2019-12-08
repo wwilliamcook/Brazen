@@ -19,10 +19,10 @@
 
 #include "tuple.h"
 #include "simulator.h"
+#include "../deps/SDL2/include/SDL.h"
 
 #include <vector>
 #include <array>
-#include <SDL.h>
 #include <chrono>
 #include <thread>
 #include <atomic>
@@ -33,7 +33,7 @@
 #define ROTATION_RATE 0.004  // Radians per second
 
 
-namespace PhysicsSimulator {
+namespace Brazen {
 	/*
 	 * Class: Camera
 	 * -------------
@@ -42,7 +42,7 @@ namespace PhysicsSimulator {
 	 */
 	template <std::uint8_t _Size>
 	class Camera {
-	private:
+	public:
 		/**************************** ATTRIBUTES *****************************/
 		std::uint16_t dispW, dispH;  // Size of computer window
 		double vdispW, vdispH;  // Size of window in simulation
@@ -66,7 +66,7 @@ namespace PhysicsSimulator {
 		{}
 
 		/************************* ACCESS FUNCTIONS **************************/
-	private:
+		
 		/*
 		 * Function: getDistance
 		 * ---------------------
@@ -92,9 +92,9 @@ namespace PhysicsSimulator {
 			posRelativeToCamera = pos - this->pos;
 			posRelativeToPOV = posRelativeToCamera + dir * scale;
 			if (dot(posRelativeToPOV, dir) > 0) {
-				poInViewingPlane = (posRelativeToCamera * scale + scaleSquaredTimesDir)
+				posInViewingPlane = (posRelativeToCamera * scale + scaleSquaredTimesDir)
 					/ (dot(posRelativeToCamera, dir) + scale)
-					- scaleTimesCameraDir;  // Position of the particle projected onto the viewing plane
+					- scaleTimesDir;  // Position of the particle projected onto the viewing plane
 				
 				out[0] = dispW / 2. + dot(posInViewingPlane, screenX) * dispW / vdispW;
 				out[1] = dispH / 2. - dot(posInViewingPlane, screenY) * dispH / vdispH;
@@ -172,9 +172,6 @@ namespace PhysicsSimulator {
 			dir = initDir;
 			scale = 1.;
 		}
-
-		template <class dtype>
-		friend class VideoOutput;
 	};
 
 	namespace {
@@ -209,12 +206,16 @@ namespace PhysicsSimulator {
 	/*
 	 * Class: VideoOutput
 	 * ------------------
+	 * Creates a window using SDL and renders the virtual environment of the
+	 * attached Simulator.
+	 * 
+	 * Allows the user to move the Camera using the keyboard.
 	 */
-	template <class dtype>
+	template <std::uint8_t _Size>
 	class VideoOutput {
 	private:
-		Simulator3D<dtype>* simulator;
-		Camera<dtype> camera;
+		Simulator<_Size>* simulator;
+		Camera<_Size> camera;
 		const std::string windowTitle;
 
 		std::thread outputThread;
@@ -222,34 +223,34 @@ namespace PhysicsSimulator {
 
 		const uint16_t displayWidth, displayHeight;
 		uint16_t windowWidth, windowHeight,
-			windowWidthMargin, windowHeightMargin;
-		Vector2D<double> displayCenter;
+			     windowWidthMargin, windowHeightMargin;
+		std::array<double, 2> displayCenter;
 
-		const double timeInterval;//minimum number of seconds between updates
+		const double timeInterval;  // Minimum number of seconds between updates
 
 		SDL_Window* window;
 		SDL_Renderer* renderer;
 		SDL_Texture* texture;
 		SDL_Event pendingEvent;
 
-		typedef std::vector<std::vector<pixelAtomData<dtype> > > screenAtomData;
+		typedef std::vector<std::vector<pixelAtomData> > screenAtomData;
 
 		screenAtomData pixData;
 
 		const unsigned int texWidth = 1024;
 		const unsigned int texHeight = 1024;
-		std::vector<uint8_t> pixels;
+		std::vector<std::uint8_t> pixels;
 
 		bool mouseLeftDown, mouseRightDown;
 		enum cameraMoveKeys {
-			MOVE_KEY_FORWARD = SDL_SCANCODE_W,
+			MOVE_KEY_FORWARD  = SDL_SCANCODE_W,
 			MOVE_KEY_BACKWARD = SDL_SCANCODE_S,
-			MOVE_KEY_LEFT = SDL_SCANCODE_A,
-			MOVE_KEY_RIGHT = SDL_SCANCODE_D,
-			MOVE_KEY_DOWN = SDL_SCANCODE_LSHIFT,
-			MOVE_KEY_UP = SDL_SCANCODE_SPACE,
-			MOVE_KEY_RESET = SDL_SCANCODE_R,
-			MOVE_KEY_IDLE = SDL_SCANCODE_ESCAPE
+			MOVE_KEY_LEFT     = SDL_SCANCODE_A,
+			MOVE_KEY_RIGHT    = SDL_SCANCODE_D,
+			MOVE_KEY_DOWN     = SDL_SCANCODE_LSHIFT,
+			MOVE_KEY_UP       = SDL_SCANCODE_SPACE,
+			MOVE_KEY_RESET    = SDL_SCANCODE_R,
+			MOVE_KEY_IDLE     = SDL_SCANCODE_ESCAPE
 		};
 		bool movementKeysPressed[6];
 		enum movement {
@@ -261,11 +262,11 @@ namespace PhysicsSimulator {
 			MOVEMENT_DOWN
 		};
 
-		bool idle;//true if the display is currently non-interactive
+		bool idle;  // True when the display is currently non-interactive
 	public:
-		VideoOutput(Simulator3D<dtype>& simulator, std::string windowTitle,
+		VideoOutput(Simulator<_Size>& simulator, std::string windowTitle,
 			const uint16_t displayWidth, const uint16_t displayHeight,
-			const Camera<dtype>& camera,
+			const Camera<_Size>& camera,
 			double updateFrequencyHz = 60.) :
 			simulator(&simulator), camera(camera),
 			windowTitle(windowTitle),
@@ -278,13 +279,13 @@ namespace PhysicsSimulator {
 		{
 			uint16_t i;
 
-			this->camera.displayWidth = displayWidth;
-			this->camera.displayHeight = displayHeight;
+			this->camera.dispW = displayWidth;
+			this->camera.dispH = displayHeight;
 
 			running = false;
 
-			displayCenter.x = displayWidth / 2.;
-			displayCenter.y = displayHeight / 2.;
+			displayCenter[0] = displayWidth / 2.;
+			displayCenter[0] = displayHeight / 2.;
 
 			for (i = 0; i < 6; i++)
 				movementKeysPressed[i] = false;
@@ -294,7 +295,13 @@ namespace PhysicsSimulator {
 			window = NULL;
 			renderer = NULL;
 		}
-		~VideoOutput(void) {//shut down SDL
+
+		/*
+		 * Destructor
+		 * ----------
+		 * Closes the window and shuts down SDL.
+		 */
+		~VideoOutput(void) {
 			SDL_DestroyRenderer(renderer);
 			SDL_DestroyWindow(window);
 			SDL_Quit();
@@ -342,14 +349,14 @@ namespace PhysicsSimulator {
 		}
 
 		void runOutput(void) {
-			std::vector<OutputParticle3D<dtype> > particles;
+			std::vector<OutputParticle<_Size> > particles;
 			time_point now, lastOutputTime;
-			uint32_t i;
-			Vector2D<uint16_t> pos;
+			std::uint32_t i;
+			std::array<uint16_t, 2> pos;
 			Uint64 start, end, freq;
-			uint16_t offset;
+			std::uint16_t offset;
 			double secondsElapsed = 0;
-			dtype distance;
+			double distance;
 
 			now = lastOutputTime = std::chrono::steady_clock::now();
 
@@ -370,7 +377,7 @@ namespace PhysicsSimulator {
 				SDL_RenderClear(renderer);
 				drawRect(renderer, 0, 0, windowWidth, windowHeight);
 
-				pixData = screenAtomData(displayWidth, std::vector<pixelAtomData<dtype> >(displayHeight));
+				pixData = screenAtomData(displayWidth, std::vector<pixelAtomData>(displayHeight));
 
 /*				for (i = 0; i < texWidth * texHeight * 4; i += 4) {
 					pixels[i + 0] = 255;
@@ -387,30 +394,30 @@ namespace PhysicsSimulator {
 				//map the particles onto the display
 				for (i = 0; i < particles.size(); i++) {
 					if (camera.getParticleDisplayCoordinates(particles[i].pos, pos)) {
-						if (0 <= pos.x && pos.x < displayWidth &&
-							0 <= pos.y && pos.y < displayHeight) {//the particle is on the screen
+						if (0 <= pos[0] && pos[0] < displayWidth &&
+							0 <= pos[1] && pos[1] < displayHeight) {//the particle is on the screen
 							distance = camera.getDistance(particles[i].pos);//distance from the particle to the screen
 
-							if (pixData.at(pos.x).at(pos.y).empty) {//that pixel has no data yet
+							if (pixData.at(pos[0]).at(pos[1]).empty) {//that pixel has no data yet
 								SDL_SetRenderDrawColor(renderer,
 									particles[i].colorVal.R,
 									particles[i].colorVal.G,
 									particles[i].colorVal.B,
 									SDL_ALPHA_OPAQUE);
-								SDL_RenderDrawPoint(renderer, pos.x, pos.y);
+								SDL_RenderDrawPoint(renderer, pos[0], pos[1]);
 
-								pixData.at(pos.x).at(pos.y).empty = false;
-								pixData.at(pos.x).at(pos.y).distance = distance;
+								pixData.at(pos[0]).at(pos[1]).empty = false;
+								pixData.at(pos[0]).at(pos[1]).distance = distance;
 							}
-							else if (distance < pixData.at(pos.x).at(pos.y).distance) {//the atom that is currently occupying the pixel is farther away than this atom
+							else if (distance < pixData.at(pos[0]).at(pos[1]).distance) {//the atom that is currently occupying the pixel is farther away than this atom
 								SDL_SetRenderDrawColor(renderer,
 									particles[i].colorVal.R,
 									particles[i].colorVal.G,
 									particles[i].colorVal.B,
 									SDL_ALPHA_OPAQUE);
-								SDL_RenderDrawPoint(renderer, pos.x, pos.y);
+								SDL_RenderDrawPoint(renderer, pos[0], pos[1]);
 
-								pixData.at(pos.x).at(pos.y).distance = distance;
+								pixData.at(pos[0]).at(pos[1]).distance = distance;
 							}
 /*							offset = (texWidth * 4 * uint32_t(pos.y)) + 4 * uint32_t(pos.x);
 							pixels[offset + 0] = particles[i].colorVal.B;
@@ -557,7 +564,7 @@ namespace PhysicsSimulator {
 
 			//move camera if necessary
 			if (!idle) {
-				dtype fwd = 0, up = 0, rght = 0;
+				double fwd = 0, up = 0, rght = 0;
 
 				if (movementKeysPressed[MOVEMENT_FORWARD])
 					fwd += secondsElapsed;
