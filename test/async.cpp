@@ -30,7 +30,7 @@ using namespace std;
 
 int main() {
     Simulator simulator;
-    int i, j, k;
+    std::uint16_t i, j, k;
 
     // Add some Particles
     simulator.addParticle(Particle(Vect({ 1, 0 }), 1));
