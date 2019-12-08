@@ -149,6 +149,14 @@ namespace Brazen {
 		 * updates the output pointers.
 		 */
 		void updateState(double seconds_per_cycle);
+
+	private:
+		/*
+		 * Function: asyncLoop
+		 * -------------------
+		 * Loop used to instantiate asynchronous physics thread.
+		 */
+		void asyncLoop(void);
 	};
 
 	/*********************** CONSTRUCTORS/DESTRUCTORS ************************/
@@ -248,9 +256,8 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::start(void) {
-		// Not implemented
-		std::cerr << "ERROR: Simulator::start() not implemented." << std::endl;
-		exit(EXIT_FAILURE);
+		running = true;
+		physics_thread = std::thread(&Simulator<_Size>::asyncLoop, this);
 	}
 
 	/*
@@ -260,9 +267,8 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::stop(void) {
-		// Not implemented
-		std::cerr << "ERROR: Simulator::stop() not implemented." << std::endl;
-		exit(EXIT_FAILURE);
+		running = false;
+		physics_thread.join();
 	}
 
 	/*
@@ -338,6 +344,56 @@ namespace Brazen {
 			output_is_ready = true;  // Set to true until next time
 				// read_output and latest_output are swapped by
 				// updateOutput()
+		}
+	}
+
+	/*
+	 * Function: asyncLoop
+	 * -------------------
+	 * Loop used to instantiate asynchronous physics thread.
+	 */
+	template <std::uint8_t _Size>
+	void Simulator<_Size>::asyncLoop(void) {
+		time_point last_time, now;
+		std::uint16_t i;
+		double seconds_per_cycle;
+
+		last_time = std::chrono::steady_clock::now();
+
+		while (running) {
+			now = std::chrono::steady_clock::now();
+			seconds_per_cycle = std::chrono::duration_cast<std::chrono::microseconds>(now - last_time).count() * 0.000001;
+			last_time = now;
+
+			{  // Do physics stuff
+				// Wait for a physics update cycle to end, then update particles
+				std::lock_guard<std::mutex> physics_lock(physics_mutex);
+
+				// Update each Spring
+				for (Spring<_Size>& s : springs)
+					s.update();
+
+				// Update the position and velocity of all Particles
+				for (i = 0; i < particles.size(); i++) {
+					particles.at(i)->update(seconds_per_cycle);
+					write_output->at(i).clone(*(particles.at(i)));
+				}
+			}
+
+			// Update output pointers
+			{
+				// Coordinate timing with updateOutput()
+				std::lock_guard<std::mutex> output_lock(output_mutex);
+
+				// Swap write_output and latest_output
+				std::vector<OutputParticle<_Size> >* swap_ptr = latest_output;
+				latest_output = write_output;
+				write_output = swap_ptr;
+
+				output_is_ready = true;  // Set to true until next time
+					// read_output and latest_output are swapped by
+					// updateOutput()
+			}
 		}
 	}
 }
