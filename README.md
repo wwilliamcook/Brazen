@@ -21,7 +21,7 @@ $ ./configure
 $ make all
 ```
 
-You may then compile the examples using `$ make examples` from the root directory of Brazen.
+You may then compile the examples using `$ make examples` from the root directory of Brazen, then run an example such as `spectate.cpp` using `$ ./bin/example/spectate`
 
 ### Windows (Visual Studio)
 
