@@ -25,19 +25,19 @@ $(PROG): $(DEPS)
 	@mkdir -p bin
 	$(CC) -o bin/$@ $(CPPS) $(CCFLAGS)
 
-test/%: $(DEPS)
+bin/test/%: $(DEPS)
 	@mkdir -p bin/test
-	$(CC) -o bin/$(basename $@) $@.cpp $(CPPS) $(CCFLAGS)
+	$(CC) -o $@ test/$(notdir $@.cpp) $(CPPS) $(CCFLAGS)
 
 .PHONY: tests
-tests: $(basename $(wildcard test/*.cpp))
+tests: $(patsubst %, bin/%, $(basename $(wildcard test/*.cpp)))
 
-example/%: $(DEPS)
+bin/example/%: $(DEPS)
 	@mkdir -p bin/example
-	$(CC) -o bin/$(basename $@) $@.cpp $(CPPS) $(CCFLAGS)
+	$(CC) -o $@ example/$(notdir $@.cpp) $(CPPS) $(CCFLAGS)
 
 .PHONY: examples
-examples: $(basename $(wildcard example/*.cpp))
+examples: $(patsubst %, bin/%, $(basename $(wildcard example/*.cpp)))
 
 .PHONY: clean
 clean:
