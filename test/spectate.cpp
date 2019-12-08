@@ -32,7 +32,7 @@ typedef Brazen::VideoOutput<DIMENSIONS> VideoOutput;
 
 using namespace std;
 
-int main() {
+int main(int argc, char* argv[]) {
     Simulator simulator;
     VideoOutput video_output(simulator, "Spectate Test",
                              640, 480,

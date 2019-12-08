@@ -31,13 +31,9 @@
 *.app
 *.exe
 
-# Compiled binaries and object files
-bin/*
-obj/*
-
-# Dependency libraries
-deps/*
-
 # Visual Studio
-.vs/
-.vscode/
+*
+!.gitignore
+!*/
+!*.sln
+!*.vcxproj

@@ -11,7 +11,7 @@
 
 using namespace Brazen;
 
-int main() {
+int main(int argc, char* argv[]) {
     Simulator<3> simulator;
 
     return 0;

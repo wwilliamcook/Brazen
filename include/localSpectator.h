@@ -19,8 +19,8 @@
 
 #include "tuple.h"
 #include "simulator.h"
-#include "../deps/SDL2/include/SDL.h"
 
+#include <SDL.h>
 #include <vector>
 #include <array>
 #include <chrono>
