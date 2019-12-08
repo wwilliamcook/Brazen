@@ -51,8 +51,10 @@ namespace Brazen {
 		Tuple<_Size> screenX, screenY;  // Vectors that are orthogonal to each other and the camera direction
 		double cameraXangle, cameraYangle;  // Angle of view
 
-		double scale;
+		float initScale, scale;
 		Tuple<_Size> scaleTimesDir, scaleSquaredTimesDir;
+		Tuple<_Size> sd, sdmc;
+		float sdd;
 
 	public:
 		/********************* CONSTRUCTORS/DESTRUCTORS **********************/
@@ -62,7 +64,7 @@ namespace Brazen {
 			   vdispW(vdispW), vdispH(vdispH),
 			   pos(pos), initPos(pos),
 			   dir(dir), initDir(dir),
-			   scale(1.)
+			   initScale(0.08), scale(initScale)
 		{}
 
 		/************************* ACCESS FUNCTIONS **************************/
@@ -89,28 +91,29 @@ namespace Brazen {
 		 * 
 		 * Returns: true if particle is visible, false otherwise
 		 */
-		bool getParticleDisplayCoordinates(const Tuple<_Size>& pos, double p_rad,
+		bool getParticleDisplayCoordinates(const Tuple<_Size>& pos, float p_rad,
 										   int& x, int& y,
 										   int& w, int& h) const {
 			Tuple<_Size> posRelativeToCamera,
 			             posRelativeToPOV,
 						 posInViewingPlane;
-			double distance, angle;
+			float distanceSquared, radius, rod;
 			
 			posRelativeToCamera = pos - this->pos;
-			posRelativeToPOV = posRelativeToCamera + dir * scale;
-			distance = magnitude(posRelativeToPOV);
-			angle = sqrtf(distance*distance - p_rad*p_rad);
-
+			posRelativeToPOV = pos + sdmc;
+			distanceSquared = magnitudeSquared(posRelativeToPOV - p_rad * dir);
+			rod = p_rad / sqrtf(distanceSquared);
+			radius = scale * rod / sqrtf(1 - rod * rod) * (dispW + dispH) / (vdispW + vdispH);
+			
 			if (dot(posRelativeToPOV, dir) > 0) {
-				posInViewingPlane = (posRelativeToCamera * scale + scaleSquaredTimesDir)
-					/ (dot(posRelativeToCamera, dir) + scale)
-					- scaleTimesDir;  // Position of the particle projected onto the viewing plane
+				// Calculate the position of the Particle projected onto the viewing plane
+				posInViewingPlane = (sdd / dot(posRelativeToPOV, dir)) * posRelativeToPOV - sd;
 				
-				x = dispW / 2. + dot(posInViewingPlane, screenX) * dispW / vdispW;
-				y = dispH / 2. - dot(posInViewingPlane, screenY) * dispH / vdispH;
+				x = dispW * (0.5 + dot(posInViewingPlane, screenX) / vdispW) - radius;
+				y = dispH * (0.5 - dot(posInViewingPlane, screenY) / vdispH) - radius;
 
-				w = h = 2. * scale * tanf(angle);
+				w = h = 2. * radius;
+
 
 				return true;
 			}
@@ -137,12 +140,13 @@ namespace Brazen {
 			// Find screenY
 			screenY = cross(screenX, dir);
 
-			// Find projection values
-			scaleTimesDir = dir * scale;
-			scaleSquaredTimesDir = scaleTimesDir * scale;
-
 			cameraXangle = 2. * atanl(vdispW / 2. / scale);
 			cameraYangle = 2. * atanl(vdispH / 2. / scale);
+
+			// "Prebake" values for computing getParticleDisplayCoordinates(...)
+			sd = scale * dir;
+			sdd = dot(sd, dir);
+			sdmc = sd - pos;
 		}
 
 		/*
@@ -183,7 +187,7 @@ namespace Brazen {
 		void reset(void) {
 			pos = initPos;
 			dir = initDir;
-			scale = 1.;
+			scale = initScale;
 		}
 	};
 
@@ -408,9 +412,6 @@ namespace Brazen {
 				SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 				SDL_RenderClear(renderer);
 				drawRect(0, 0, windowWidth, windowHeight);
-
-//				std::cout << "particle count: " << simulator->size() << std::endl;
-//				std::cout << camera.pos << camera.dir << camera.screenX << camera.screenY << '\n';
 
 				// Draw the particles
 				for (const OutputParticle<_Size>& p : simulator->getOutput())
