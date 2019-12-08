@@ -360,7 +360,7 @@ namespace Brazen {
 
 		last_time = std::chrono::steady_clock::now();
 
-		while (running) {
+		while (running.load()) {
 			now = std::chrono::steady_clock::now();
 			seconds_per_cycle = std::chrono::duration_cast<std::chrono::microseconds>(now - last_time).count() * 0.000001;
 			last_time = now;
