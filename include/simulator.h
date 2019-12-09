@@ -11,8 +11,7 @@
  *   Exposes simulated environment state through a std::vector of OutputParticles
  * 
  * TODO:
- *  -Implement Simulator::start(...)
- *  -Implement Simulator::stop(...)
+ *  -Fix bug where time is unsteady when not printing in physics loop
  */
 
 
@@ -33,8 +32,6 @@
 
 
 namespace Brazen {
-	typedef std::chrono::time_point<std::chrono::steady_clock> time_point;
-
 	/*
 	 * Class: Simulator
 	 * ----------------
@@ -217,7 +214,7 @@ namespace Brazen {
 	/*
 	 * Function: addParticle
 	 * ---------------------
-	 * Copies the given Particel into the simulation environment.
+	 * Copies the given Particle into the simulation environment.
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::addParticle(const Particle<_Size>& new_particle) {
@@ -245,6 +242,11 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::addSpring(std::uint16_t p1, std::uint16_t p2, const Spring<_Size>& s) {
+		// Wait for a physics update cycle to end, then update springs
+		std::lock_guard<std::mutex> physics_lock(physics_mutex);
+		// Make sure the output is safe to write to
+		std::lock_guard<std::mutex> output_lock(output_mutex);
+
 		springs.push_back(Spring<_Size>(s));
 		springs.at(springs.size() - 1).setEndpoints(particles.at(p1), particles.at(p2));
 	}
@@ -278,14 +280,14 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	bool Simulator<_Size>::updateOutput(void) {
-		// Ensure that the physics loop does not modify the output pointers
-		//   during this function
-		std::lock_guard<std::mutex> output_lock(output_mutex);
-
 		if (output_is_ready) {
 			output_is_ready = false;  // Set to false until next time
 				// write_output and latest_output are swapped by the
 				// physics loop.
+
+			// Ensure that the physics loop does not modify the output pointers
+			//   during this function
+			std::lock_guard<std::mutex> output_lock(output_mutex);
 
 			// Swap read_output and latest_output pointers
 			std::vector<OutputParticle<_Size> >* swap_ptr = latest_output;
@@ -354,9 +356,9 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	void Simulator<_Size>::asyncLoop(void) {
-		time_point last_time, now;
+		std::chrono::time_point<std::chrono::steady_clock> last_time, now;
 		std::uint16_t i;
-		double seconds_per_cycle;
+		float seconds_per_cycle;
 
 		last_time = std::chrono::steady_clock::now();
 
@@ -364,6 +366,8 @@ namespace Brazen {
 			now = std::chrono::steady_clock::now();
 			seconds_per_cycle = std::chrono::duration_cast<std::chrono::microseconds>(now - last_time).count() * 0.000001;
 			last_time = now;
+
+			std::cout << "elapsed seconds: " << seconds_per_cycle << std::endl;
 
 			{  // Do physics stuff
 				// Wait for a physics update cycle to end, then update particles
