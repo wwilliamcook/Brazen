@@ -8,7 +8,6 @@
  * Defines the following structs:
  *   Particle<...> - Represents a simulated particle with necessary physical attributes
  *   OutputParticle<...> - Represents a particle as just what is needed to display it
- *   color - Represents an RGB color
  */
 
 
@@ -17,21 +16,6 @@
 
 #include "tuple.h"
 #include <stdlib.h>  // std::uint8_t
-
-
-/*
- * Struct: color
- * -------------
- * Represents an RGB color.
- */
-struct color {
-	uint16_t R, G, B;
-
-	color(void):
-		R(0), G(0), B(0) {}
-	color(uint16_t R, uint16_t G, uint16_t B) :
-		R(R), G(G), B(B) {}
-};
 
 namespace Brazen {
 	/*
@@ -122,7 +106,6 @@ namespace Brazen {
 	template <std::uint8_t _Size>
 	struct OutputParticle {
 		Tuple<_Size> pos;
-		color colorVal;
 
 		OutputParticle(void) :
 			pos(true) {}
