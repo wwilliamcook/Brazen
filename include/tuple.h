@@ -25,6 +25,7 @@
 #include <iostream>
 
 #define TUPLE_TYPE float
+//#define WARN_ZERO_UNIT
 
 
 /*
@@ -603,8 +604,9 @@ Tuple<_Size> unit(const Tuple<_Size>& v, bool fake_it = true) {
 	if (mag > 0.)  // Unit vector is defined
 		return v / mag;
 	// Division by zero, unit vector is not defined
+#ifdef WARN_ZERO_UNIT
 	std::cerr << "Warning: division by zero in function Tuple<" + std::to_string(_Size) + "> unit(const Tuple<" + std::to_string(_Size) + ">& v)." << std::endl;
-
+#endif
 	if (fake_it) {  // Return a randomly oriented unit vector
 		return random_unit<_Size>();
 	}
