@@ -65,8 +65,8 @@ namespace Brazen {
 	 */
 	template <std::uint8_t _Size>
 	class Spring {
+		public:
 		/**************************** ATTRIBUTES *****************************/
-	private:
 		Particle<_Size> *p1, *p2;
 
 		double natural_length,  // Distance at which force is zero
@@ -78,7 +78,7 @@ namespace Brazen {
 		double deform_coef;  // Maliability of natural_length due to prolonged
 			                 // deformation. Value of 0 allows no deformation.
 							 // Value of 1 provides no resistance to deformation.
-	public:
+		
 		/********************* CONSTRUCTORS/DESTRUCTORS **********************/
 
 		/*
