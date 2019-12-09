@@ -101,12 +101,13 @@ namespace Brazen {
 			
 			posRelativeToCamera = pos - this->pos;
 			posRelativeToPOV = pos + sdmc;
-			distanceSquared = magnitudeSquared(posRelativeToPOV - p_rad * dir);
-			rod = p_rad / sqrtf(distanceSquared);
-			radius = scale * rod / sqrtf(1 - rod * rod) * (dispW + dispH) / (vdispW + vdispH);
 			
 			if (dot(posRelativeToPOV, dir) > 0) {
 				// Calculate the position of the Particle projected onto the viewing plane
+				distanceSquared = magnitudeSquared(posRelativeToPOV - p_rad * dir);
+				rod = p_rad / sqrtf(distanceSquared);
+				radius = scale * rod / sqrtf(1 - rod * rod) * (dispW + dispH) / (vdispW + vdispH);
+
 				posInViewingPlane = (sdd / dot(posRelativeToPOV, dir)) * posRelativeToPOV - sd;
 				
 				x = dispW * (0.5 + dot(posInViewingPlane, screenX) / vdispW) - radius;
@@ -385,14 +386,14 @@ namespace Brazen {
 		 * Draws the given OutputParticle to the display.
 		 */
 		void drawParticle(const OutputParticle<_Size>& p) {
-			camera.getParticleDisplayCoordinates(
+			if (camera.getParticleDisplayCoordinates(
 				p.pos, particleRadius,
-				rect.x, rect.y, rect.w, rect.h);
-			SDL_RenderCopy(renderer, circleTexture, NULL, &rect);
+				rect.x, rect.y, rect.w, rect.h))
+				SDL_RenderCopy(renderer, circleTexture, NULL, &rect);
 		}
 
 		void runOutput(void) {
-			time_point now, lastOutputTime;
+			std::chrono::time_point<std::chrono::steady_clock> now, lastOutputTime;
 			double secondsElapsed = 0;
 
 			lastOutputTime = std::chrono::steady_clock::now();
