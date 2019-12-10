@@ -358,7 +358,7 @@ namespace Brazen {
 	void Simulator<_Size>::asyncLoop(void) {
 		std::chrono::time_point<std::chrono::steady_clock> last_time, now;
 		std::uint16_t i;
-		float seconds_per_cycle;
+		double seconds_per_cycle;
 
 		last_time = std::chrono::steady_clock::now();
 
@@ -367,7 +367,7 @@ namespace Brazen {
 			seconds_per_cycle = std::chrono::duration_cast<std::chrono::microseconds>(now - last_time).count() * 0.000001;
 			last_time = now;
 
-			std::cout << "elapsed seconds: " << seconds_per_cycle << std::endl;
+//			std::cout << "elapsed seconds: " << seconds_per_cycle << std::endl;
 
 			{  // Do physics stuff
 				// Wait for a physics update cycle to end, then update particles

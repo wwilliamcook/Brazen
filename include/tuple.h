@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-#define TUPLE_TYPE float
+#define TUPLE_TYPE double
 //#define WARN_ZERO_UNIT
 
 
