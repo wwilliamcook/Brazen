@@ -290,6 +290,14 @@ namespace Brazen {
 					return;  // No additional forces need to be applied
 				case SpringForceType::SPRING:  // Hooke's law
 					force_magnitude = force_coef * displacement;
+					// Apply disgusting hard-coded dampening for testing
+					// Calculate the inverse sum of inverse masses
+					invinvMassSum = p1->invMass + p2->invMass;  // Not inverse yet, see next line
+					invinvMassSum = (invinvMassSum > 0) ? (1. / invinvMassSum) : 0;  // Zero means that both particles have infinite mass
+					// Calculate mass*velocity change -- Total velocity change should zero the relative velocity along the colinear axis
+					m_delta_vel = P1toP2 * ((dot(p1->vel, P1toP2) - dot(p2->vel, P1toP2)) * invinvMassSum * 0.00001);
+					p1->m_delta_vel -= m_delta_vel;
+					p2->m_delta_vel += m_delta_vel;
 					break;
 				case SpringForceType::INV_SQUARE:  // Inverse square law
 					force_magnitude = force_coef / (distance * distance + EPSILON);
