@@ -212,7 +212,7 @@ namespace Brazen {
 			Tuple<_Size> P1toP2 = p2->pos - p1->pos;
 			double distance = magnitude(P1toP2);
 			P1toP2 = unit(P1toP2);
-			double displacement = distance - natural_length;  // Distance the spring is compressed
+			double displacement = distance - natural_length;  // Distance the spring is stretched
 
 			double force_magnitude;  // Magnitude of attractive force between the two particles
 			Tuple<_Size> force_vector(false);
@@ -233,7 +233,7 @@ namespace Brazen {
 				displacement = distance - natural_length;
 
 				// Determine how to apply the force
-				if (distance < natural_length) {  // Compressed
+				if (displacement < 0) {  // Compressed
 					force_coef = comp_strength;
 					force_type = comp_type;
 				}
@@ -246,34 +246,39 @@ namespace Brazen {
 				switch (force_type) {
 				case SpringForceType::RIGID:  // Disallow deformation
 					// Calculate the inverse sum of inverse masses
-					invinvMassSum = p1->invMass + p2->invMass;
+					invinvMassSum = p1->invMass + p2->invMass;  // Not inverse yet, see next line
 					invinvMassSum = (invinvMassSum > 0) ? (1. / invinvMassSum) : 0;  // Zero means that both particles have infinite mass
 
-					// Calculate mass*position change -- Total displacement should cause distance to equal naturalLength
-					m_delta_pos = P1toP2 * (force_coef * displacement * invinvMassSum);
-					// Calculate mass*velocity change -- Total velocity change should zero the relative velocity along the colinear axis
-					m_delta_vel = P1toP2 * (force_coef * (dot(p1->vel, P1toP2) - dot(p2->vel, P1toP2)) * invinvMassSum);
-
 					if (invinvMassSum > 0) {  // At least one of the particles has finite mass
+						// Calculate mass*position change -- Total displacement should cause distance to equal naturalLength
+						m_delta_pos = P1toP2 * (displacement * invinvMassSum);
+						// Calculate mass*velocity change -- Total velocity change should zero the relative velocity along the colinear axis
+						m_delta_vel = P1toP2 * ((dot(p1->vel, P1toP2) - dot(p2->vel, P1toP2)) * invinvMassSum);
+
 						// Apply position change
-						p1->m_delta_pos -= m_delta_pos;
-						p2->m_delta_pos += m_delta_pos;
+						p1->m_delta_pos += m_delta_pos;
+						p2->m_delta_pos -= m_delta_pos;
 						
 						// Apply velocity change
 						p1->m_delta_vel -= m_delta_vel;
 						p2->m_delta_vel += m_delta_vel;
 
-						// Calculate the mass**acceleration change -- Total acceleration change should zero the relative acceleration along the colinear axis
-						delta_F = P1toP2 * (force_coef * (p1->invMass*dot(p1->F, P1toP2) - p2->invMass*dot(p2->F, P1toP2)) * invinvMassSum);
+						// Calculate half total force change -- Total force change should zero the relative force along the colinear axis
+						delta_F = P1toP2 * ((dot(p1->F, P1toP2) - dot(p2->F, P1toP2)) * .5);
 
-						// Apply acceleration change
+						// Apply force change
 						p1->F -= delta_F;
 						p2->F += delta_F;
 					}
 					else {  // Both particles have infinite mass
+						// Calculate half total displacement -- Total displacement should cause distance to equal naturalLength
+						m_delta_pos = P1toP2 * (displacement * .5);
+						// Calculate half total velocity change -- Total velocity change should zero the relative velocity along the colinear axis
+						m_delta_vel = P1toP2 * ((dot(p1->vel, P1toP2) - dot(p2->vel, P1toP2)) * .5);
+
 						// Apply position change
-						p1->m_delta_pos_hard -= m_delta_pos;
-						p2->m_delta_pos_hard += m_delta_pos;
+						p1->m_delta_pos_hard += m_delta_pos;
+						p2->m_delta_pos_hard -= m_delta_pos;
 
 						// Apply velocity change
 						p1->m_delta_vel_hard -= m_delta_vel;
@@ -281,13 +286,6 @@ namespace Brazen {
 
 						// Objects of infinite mass don't accelerate, so nothing to do
 					}
-
-					// Adjust force
-					// Total force change should zero the relative force along the colinear axis
-					total_change = dot(p1->F, P1toP2) - dot(p2->F, P1toP2);
-					mutual_change_vector = P1toP2 * (force_coef * total_change / 2.);  // Change in force from the midpoint per particle
-					p1->F -= mutual_change_vector;
-					p2->F += mutual_change_vector;
 
 					return;  // No additional forces need to be applied
 				case SpringForceType::SPRING:  // Hooke's law
