@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     // Add some Springs
     simulator.addSpring(0, 1, Spring(.2, 100, 100, Brazen::SpringType::SPRING, 0.));
 
-    constructRandomCube(simulator, Vect( { 0, 0, 3 }), Spring(.5, 50, 50, Brazen::SpringType::SPRING, 0.), 1);
+    constructRandomCube(simulator, Vect( { 0, 0, 3 }), Spring(.5, 50, 50, Brazen::SpringType::BOUNCY, 0.), 1);
 
     video_output.start();
     simulator.start();
