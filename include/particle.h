@@ -77,6 +77,9 @@ namespace Brazen {
 
 				// Classical velocity update
 				vel += F * (invMass * seconds_per_cycle);
+				// Apply disgusting hard-coded gravitational acceleration for testing
+				if (_Size == 3)
+					vel[2] -= 9.81 * seconds_per_cycle;
 			}
 			else {
 				// Other ragdoll physics updates
@@ -95,6 +98,15 @@ namespace Brazen {
 			pos += vel * seconds_per_cycle;
 
 			F.setZero();  // Reset the net force on the particle
+
+			// Create disgusting hard-coded floor at z = 0 for testing
+			if (_Size == 3 && invMass > 0 && pos[2] <= 0) {
+				pos[2] = F[2] = 0;
+				vel[2] = abs(vel[2]);
+				vel[0] -= vel[0] * .05;
+				vel[1] -= vel[1] * .05;
+//				vel[0] = vel[1] = F[0] = F[1] = 0;
+			}
 		}
 	};
 
