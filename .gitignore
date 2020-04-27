@@ -31,8 +31,5 @@
 *.app
 *.exe
 
-# Dependencies
-/deps/*
-
 # CMake build folder
 /build/*
