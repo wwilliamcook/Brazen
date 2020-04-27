@@ -17,10 +17,6 @@ You may then create a build project using CMake and compile using the compiler o
 * [Lazy Foo' Productions - Beginning Game Programming v2.0](https://lazyfoo.net/tutorials/SDL/)
 * [An Introduction to Modern CMake](https://cliutils.gitlab.io/modern-cmake/)
 
-## Authors
-
-* **Weston Cook** - [wwilliamcook](https://github.com/wwilliamcook)
-
 ## License
 
 This project is distributed under the Mozilla Public License 2.0 - see the [`LICENSE`](LICENSE) file for details.
