@@ -31,13 +31,8 @@
 *.app
 *.exe
 
-# Compiled binaries and object files
-bin/*
-obj/*
+# Dependencies
+/deps/*
 
-# Dependency libraries
-deps/*
-
-# Visual Studio
-.vs/
-.vscode/
+# CMake build folder
+/build/*
