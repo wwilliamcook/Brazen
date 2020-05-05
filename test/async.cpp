@@ -13,10 +13,10 @@
 
 #include <iostream>
 
-#include "../include/tuple.h"
-#include "../include/particle.h"
-#include "../include/spring.h"
-#include "../include/simulator.h"
+#include "tuple.h"
+#include "particle.h"
+#include "spring.h"
+#include "simulator.h"
 
 #define DIMENSIONS 2
 #define NUM_CYCLES 10

@@ -4,10 +4,10 @@
  * Tests whether a program can compile after including the files in include/.
  */
 
-#include "../include/tuple.h"
-#include "../include/particle.h"
-#include "../include/spring.h"
-#include "../include/simulator.h"
+#include "tuple.h"
+#include "particle.h"
+#include "spring.h"
+#include "simulator.h"
 
 using namespace Brazen;
 
