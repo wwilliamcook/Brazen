@@ -31,5 +31,9 @@
 *.app
 *.exe
 
+# Visual Studio
+.vs
+.vscode
+
 # CMake build folder
 /build/*
