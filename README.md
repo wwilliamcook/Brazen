@@ -27,17 +27,3 @@ Here is an example of building [`examples/bouncy_cube.cpp`](examples/bouncy_cube
 ```
 g++ -Iinclude examples/bouncy_cube.cpp
 ```
-
-## Contributing
-
-Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests to us.
-
-## Authors
-
-* **Weston Cook** - *Initial work* - [wwilliamcook](https://github.com/wwilliamcook)
-
-See also the list of [contributors](https://github.com/wwilliamcook/Brazen/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the Mozilla Public License 2.0 - see the [`LICENSE`](LICENSE) file for details.
